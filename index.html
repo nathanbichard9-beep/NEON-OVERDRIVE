@@ -53,7 +53,7 @@ function burst(x,y,color){for(let i=0;i<8;i++)particles.push({x,y,vx:(Math.rando
 function spawnEnemy(){let b=wave%5===0&&!boss&&enemies.length===0;if(b){boss=true;enemies.push({x:W/2,y:-65,v:1.1,r:38,hp:Math.round((28+wave*5)*(remotePlayer?1.8:1)),max:Math.round((28+wave*5)*(remotePlayer?1.8:1)),boss:true,rot:0})}else if(!boss||wave%5!==0)enemies.push({x:20+Math.random()*(W-40),y:-20,v:(1+wave*.12+Math.random()*.6)*(remotePlayer?1.15:1),r:13+Math.random()*7,hp:1+Math.floor(wave/4)+(remotePlayer?2:0),rot:Math.random()*6,boss:false})}
 function shoot(){lasers.push({x:player.x,y:player.y-22,v:8});if(remotePlayer)lasers.push({x:remotePlayer.x,y:remotePlayer.y-22,v:8});fleet.forEach((f,i)=>lasers.push({x:player.x+(i%2?22:-22),y:player.y-12,v:7}))}
 function update(){frame++;stars.forEach(s=>{s.y+=s.s;if(s.y>H)s.y=0});if(!playing||paused)return;if(netMode==="guest"){if(netSnapshot){applySnapshot(netSnapshot)}return;}
-if(frame%Math.max(22,Math.floor((80-wave*3)*(remotePlayer?.78:1)))===0)spawnEnemy();if(frame%700===0){wave++;boss=false;ui()}
+if(frame%Math.max(22,Math.floor((80-wave*3)*(remotePlayer ? 0.78 : 1)))===0)spawnEnemy();if(frame%700===0){wave++;boss=false;ui()}
 fire++;if(fire>Math.max(7,18-up.rate*2)){shoot();fire=0}
 if(boost>0)boost--;
 lasers.forEach(l=>l.y-=l.v);lasers=lasers.filter(l=>l.y>-20);
