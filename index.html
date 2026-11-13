@@ -50,10 +50,10 @@ ctx.fillStyle='#b8faff';ctx.fillRect(-2,-5,4,11);ctx.fillStyle='#ff4ed8';ctx.fil
 ctx.fillStyle='#ff9e4d';ctx.shadowColor='#ff5bba';ctx.beginPath();ctx.moveTo(-5,19);ctx.lineTo(0,31+Math.random()*5);ctx.lineTo(5,19);ctx.fill();ctx.restore()}
 function enemyDraw(e){ctx.save();ctx.translate(e.x,e.y);ctx.rotate(e.rot);ctx.shadowBlur=15;ctx.shadowColor=e.boss?'#ff4fd8':'#a64dff';ctx.fillStyle=e.boss?'#681c75':'#39206b';ctx.strokeStyle=e.boss?'#ff75df':'#c58aff';ctx.lineWidth=e.boss?3:2;ctx.beginPath();let n=e.boss?8:6;for(let i=0;i<n;i++){let a=i*Math.PI*2/n,r=e.r*(i%2?.78:1);ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle='#ffb5f3';ctx.fillRect(-4,-4,8,8);ctx.restore()}
 function burst(x,y,color){for(let i=0;i<8;i++)particles.push({x,y,vx:(Math.random()-.5)*4,vy:(Math.random()-.5)*4,life:25,color})}
-function spawnEnemy(){let b=wave%5===0&&!boss&&enemies.length===0;if(b){boss=true;enemies.push({x:W/2,y:-65,v:1.1,r:38,hp:28+wave*5,max:28+wave*5,boss:true,rot:0})}else if(!boss||wave%5!==0)enemies.push({x:20+Math.random()*(W-40),y:-20,v:1+wave*.12+Math.random()*.6,r:13+Math.random()*7,hp:1+Math.floor(wave/4),rot:Math.random()*6,boss:false})}
+function spawnEnemy(){let b=wave%5===0&&!boss&&enemies.length===0;if(b){boss=true;enemies.push({x:W/2,y:-65,v:1.1,r:38,hp:Math.round((28+wave*5)*(remotePlayer?1.8:1)),max:Math.round((28+wave*5)*(remotePlayer?1.8:1)),boss:true,rot:0})}else if(!boss||wave%5!==0)enemies.push({x:20+Math.random()*(W-40),y:-20,v:(1+wave*.12+Math.random()*.6)*(remotePlayer?1.15:1),r:13+Math.random()*7,hp:1+Math.floor(wave/4)+(remotePlayer?2:0),rot:Math.random()*6,boss:false})}
 function shoot(){lasers.push({x:player.x,y:player.y-22,v:8});if(remotePlayer)lasers.push({x:remotePlayer.x,y:remotePlayer.y-22,v:8});fleet.forEach((f,i)=>lasers.push({x:player.x+(i%2?22:-22),y:player.y-12,v:7}))}
 function update(){frame++;stars.forEach(s=>{s.y+=s.s;if(s.y>H)s.y=0});if(!playing||paused)return;if(netMode==="guest"){if(netSnapshot){applySnapshot(netSnapshot)}return;}
-if(frame%Math.max(25,80-wave*3)===0)spawnEnemy();if(frame%700===0){wave++;boss=false;ui()}
+if(frame%Math.max(22,Math.floor((80-wave*3)*(remotePlayer?.78:1)))===0)spawnEnemy();if(frame%700===0){wave++;boss=false;ui()}
 fire++;if(fire>Math.max(7,18-up.rate*2)){shoot();fire=0}
 if(boost>0)boost--;
 lasers.forEach(l=>l.y-=l.v);lasers=lasers.filter(l=>l.y>-20);
