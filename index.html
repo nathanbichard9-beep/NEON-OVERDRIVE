@@ -117,10 +117,10 @@ fire++;if(fire>Math.max(6,18-up.rate*2-ships[selectedShip].fire)){shoot();fire=0
 if(boost>0)boost--;
 lasers.forEach(l=>l.y-=l.v);lasers=lasers.filter(l=>l.y>0);
 enemies.forEach(e=>{e.y+=e.v;e.rot+=.015;if(e.boss)e.x=W/2+Math.sin(frame*(e.bossType===1?.032:e.bossType===2?.011:.018))*W*(e.bossType===2?.18:.28);if(e.y>H+40){hp-=e.boss?20:8;e.y=H+100;ui()}});
-for(let e of enemies){if(e.y>=0)for(let l of lasers){if(Math.hypot(e.x-l.x,e.y-l.y)<e.r+5){l.y=-100;e.hp-=1+up.power+ships[selectedShip].power;if(e.hp<=0){score+=e.boss?500:20;if(e.boss){records.wins++;saveRecords();updateRecords()}let n=e.boss?20:3;for(let i=0;i<n;i++)gems.push({x:e.x+(Math.random()-.5)*25,y:e.y+(Math.random()-.5)*20,vx:0,vy:0});burst(e.x,e.y,'#ff70e5')}}}}
+for(let e of enemies){if(e.y>=0)for(let l of lasers){if(Math.hypot(e.x-l.x,e.y-l.y)<e.r+5){l.y=-100;e.hp-=1+up.power+ships[selectedShip].power;if(e.hp<=0){score+=e.boss?500:20;if(e.boss){records.wins++;checkAchievements();saveRecords();updateRecords()}let n=e.boss?20:3;for(let i=0;i<n;i++)gems.push({x:e.x+(Math.random()-.5)*25,y:e.y+(Math.random()-.5)*20,vx:0,vy:0});burst(e.x,e.y,'#ff70e5')}}}}
 enemies=enemies.filter(e=>e.hp>0&&e.y<H+60);
 gems.forEach(g=>{let dx=player.x-g.x,dy=player.y-g.y,d=Math.hypot(dx,dy);g.vx+=dx/(d||1)*.65;g.vy+=dy/(d||1)*.65;g.x+=g.vx;g.y+=g.vy;g.vx*=.90;g.vy*=.90;if(d<18||(remotePlayer&&Math.hypot(remotePlayer.x-g.x,remotePlayer.y-g.y)<18)){g.y=-999;crystals++;ui()}});gems=gems.filter(g=>g.y>-100);
-if(frame%120===0&&hp<100)hp=Math.min(100,hp+1);
+if(frame%120===0&&hp<ships[selectedShip].hp)hp=Math.min(ships[selectedShip].hp,hp+1);
 particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life--});particles=particles.filter(p=>p.life>0);
 if(hp<=0&&!gameEnded){gameEnded=true;playing=false;records.deaths++;records.games++;records.best=Math.max(records.best,score);records.leaderboard.push(score);records.leaderboard.sort((a,b)=>b-a);records.leaderboard=records.leaderboard.slice(0,10);checkAchievements();saveRecords();updateRecords();$('over').classList.remove('hidden');$('finalScore').textContent='Score : '+score+' • Cristaux : '+crystals}
 }
