@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#070b20"><title>NEON OVERDRIVE</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050817;color:#eaf8ff;font-family:system-ui,-apple-system,Segoe UI,sans-serif;touch-action:none}
+#app{height:100dvh;display:flex;flex-direction:column;background:radial-gradient(ellipse at 50% 15%,#14244b 0%,#080e25 48%,#030611 100%)}
+header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #28416d88;background:#080e20cc}
+.logo{font-weight:1000;letter-spacing:2px;font-size:clamp(16px,4vw,24px);color:#8af5ff;text-shadow:0 0 14px #18cfff}.logo span{color:#bb83ff}
+.stats{display:flex;gap:12px;font-size:12px;color:#b8d8f2}.stats b{color:#fff}
+#arenaWrap{position:relative;flex:1;min-height:0;overflow:hidden}canvas{display:block;width:100%;height:100%;touch-action:none}
+#hud{position:absolute;inset:10px 10px auto;display:flex;justify-content:space-between;pointer-events:none;font-size:12px;text-shadow:0 1px 5px #000}
+.pill{background:#0a1634bb;border:1px solid #39d9ff66;border-radius:20px;padding:6px 10px}
+#controls{display:flex;gap:8px;padding:9px 10px calc(10px + env(safe-area-inset-bottom));background:#080e20;border-top:1px solid #29416a;justify-content:center;flex-wrap:wrap}
+button{border:1px solid #3edbff88;background:linear-gradient(135deg,#102b50,#17183f);color:#e9fbff;border-radius:10px;padding:10px 13px;font-weight:800;font-size:12px;box-shadow:0 0 12px #00bfff22}
+button:active{transform:scale(.96);filter:brightness(1.4)}button.primary{background:linear-gradient(135deg,#087eae,#5b3cb2);border-color:#8af5ff}
+#overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#030817cc;backdrop-filter:blur(7px);padding:18px}
+.panel{width:min(440px,100%);max-height:90%;overflow:auto;border:1px solid #48dfff88;border-radius:18px;background:linear-gradient(160deg,#101f42f5,#090d22f5);padding:20px;box-shadow:0 0 35px #00bfff22}
+.panel h2{margin:0 0 8px;color:#8af5ff;letter-spacing:2px}.panel p{color:#b9cce5;font-size:13px;line-height:1.5}
+.shoprow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #ffffff18}.shoprow small{display:block;color:#9bb4d4}
+.hidden{display:none!important}.hint{color:#8aa9c8;font-size:11px;text-align:center;padding:0 8px 5px}
+</style></head>
+<body><div id="app">
+<header><div class="logo">NEON <span>OVERDRIVE</span></div><div class="stats"><span>◆ <b id="gems">0</b></span><span>SCORE <b id="score">0</b></span><span>VAGUE <b id="wave">1</b></span></div></header>
+<div id="arenaWrap"><canvas id="game"></canvas><div id="hud"><div class="pill">COQUE <b id="hp">100</b>%</div><div class="pill" id="bossTag">SECTEUR 01</div></div>
+<div id="overlay"><div class="panel" id="menu"><h2>NEON OVERDRIVE</h2><p>Traverse l'arène, esquive les drones et récupère les cristaux. Déplace ton vaisseau en glissant le doigt ou la souris sur toute la zone de jeu.</p><button class="primary" id="start">LANCER LA PARTIE</button><p>Les canons tirent automatiquement. Un boss arrive toutes les 5 vagues.</p></div>
+<div class="panel hidden" id="shop"><h2>HANGAR / AMÉLIORATIONS</h2><p>Utilise tes cristaux pour renforcer ton escadrille.</p>
+<div class="shoprow"><div><b>Vaisseau allié</b><small>Ajoute un drone qui combat à tes côtés</small></div><button data-buy="ship">150 ◆</button></div>
+<div class="shoprow"><div><b>Cadence laser</b><small>Tirs plus fréquents</small></div><button data-buy="rate">100 ◆</button></div>
+<div class="shoprow"><div><b>Puissance</b><small>Dégâts augmentés</small></div><button data-buy="power">125 ◆</button></div>
+<div class="shoprow"><div><b>Aimant à cristaux</b><small>Attraction renforcée</small></div><button data-buy="magnet">100 ◆</button></div>
+<button class="primary" id="resume">REPRENDRE</button></div>
+<div class="panel hidden" id="over"><h2>VAISSEAU DÉTRUIT</h2><p id="finalScore"></p><button class="primary" id="again">RÉESSAYER</button></div></div></div>
+<div class="hint">GLISSE POUR PILOTER • TIRS AUTOMATIQUES</div>
+<div id="controls"><button id="pause">Ⅱ PAUSE</button><button id="shopBtn">✦ HANGAR</button><button id="boost">⚡ SURCHARGE</button></div>
+</div>
+<script>
+(()=>{const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');let W=0,H=0,dpr=1;
+function resize(){const r=canvas.getBoundingClientRect();dpr=Math.min(devicePixelRatio||1,2);W=r.width;H=r.height;canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}new ResizeObserver(resize).observe(canvas);
+const $=id=>document.getElementById(id);let player,lasers,enemies,gems,particles,fleet,stars,score=0,crystals=0,wave=1,hp=100,playing=false,paused=false,frame=0,fire=0,spawn=0,boss=false,boost=0,up={rate:0,power:0,magnet:0};
+function reset(){player={x:W/2,y:H*.78};lasers=[];enemies=[];gems=[];particles=[];fleet=[];stars=Array.from({length:90},()=>({x:Math.random()*W,y:Math.random()*H,s:.4+Math.random()*1.8}));score=0;wave=1;hp=100;frame=0;fire=0;spawn=0;boss=false;boost=0;ui()}
+function ui(){$('gems').textContent=crystals;$('score').textContent=score;$('wave').textContent=wave;$('hp').textContent=Math.max(0,Math.ceil(hp));$('bossTag').textContent=wave%5===0?'BOSS EN APPROCHE':'SECTEUR '+String(wave).padStart(2,'0')}
+function ship(x,y,scale=1,ally=false){ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);ctx.shadowBlur=18;ctx.shadowColor=ally?'#a86bff':'#27dfff';
+ctx.fillStyle='#102a52';ctx.strokeStyle=ally?'#c18aff':'#5ceeff';ctx.lineWidth=2;
+ctx.beginPath();ctx.moveTo(0,-25);ctx.lineTo(12,-8);ctx.lineTo(25,12);ctx.lineTo(10,9);ctx.lineTo(6,21);ctx.lineTo(-6,21);ctx.lineTo(-10,9);ctx.lineTo(-25,12);ctx.lineTo(-12,-8);ctx.closePath();ctx.fill();ctx.stroke();
+ctx.fillStyle='#39cfff';ctx.beginPath();ctx.moveTo(0,-17);ctx.lineTo(5,6);ctx.lineTo(0,12);ctx.lineTo(-5,6);ctx.closePath();ctx.fill();
+ctx.fillStyle='#b8faff';ctx.fillRect(-2,-5,4,11);ctx.fillStyle='#ff4ed8';ctx.fillRect(-17,8,5,7);ctx.fillRect(12,8,5,7);
+ctx.fillStyle='#ff9e4d';ctx.shadowColor='#ff5bba';ctx.beginPath();ctx.moveTo(-5,19);ctx.lineTo(0,31+Math.random()*5);ctx.lineTo(5,19);ctx.fill();ctx.restore()}
+function enemyDraw(e){ctx.save();ctx.translate(e.x,e.y);ctx.rotate(e.rot);ctx.shadowBlur=15;ctx.shadowColor=e.boss?'#ff4fd8':'#a64dff';ctx.fillStyle=e.boss?'#681c75':'#39206b';ctx.strokeStyle=e.boss?'#ff75df':'#c58aff';ctx.lineWidth=e.boss?3:2;ctx.beginPath();let n=e.boss?8:6;for(let i=0;i<n;i++){let a=i*Math.PI*2/n,r=e.r*(i%2?.78:1);ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle='#ffb5f3';ctx.fillRect(-4,-4,8,8);ctx.restore()}
+function burst(x,y,color){for(let i=0;i<8;i++)particles.push({x,y,vx:(Math.random()-.5)*4,vy:(Math.random()-.5)*4,life:25,color})}
+function spawnEnemy(){let b=wave%5===0&&!boss&&enemies.length===0;if(b){boss=true;enemies.push({x:W/2,y:-65,v:1.1,r:38,hp:28+wave*5,max:28+wave*5,boss:true,rot:0})}else if(!boss||wave%5!==0)enemies.push({x:20+Math.random()*(W-40),y:-20,v:1+wave*.12+Math.random()*.6,r:13+Math.random()*7,hp:1+Math.floor(wave/4),rot:Math.random()*6,boss:false})}
+function shoot(){lasers.push({x:player.x,y:player.y-22,v:8});fleet.forEach((f,i)=>lasers.push({x:player.x+(i%2?22:-22),y:player.y-12,v:7}))}
+function update(){frame++;stars.forEach(s=>{s.y+=s.s;if(s.y>H)s.y=0});if(!playing||paused)return;
+if(frame%Math.max(25,80-wave*3)===0)spawnEnemy();if(frame%700===0){wave++;boss=false;ui()}
+fire++;if(fire>Math.max(7,18-up.rate*2)){shoot();fire=0}
+if(boost>0)boost--;
+lasers.forEach(l=>l.y-=l.v);lasers=lasers.filter(l=>l.y>-20);
+enemies.forEach(e=>{e.y+=e.v;e.rot+=.015;if(e.boss)e.x=W/2+Math.sin(frame*.018)*W*.28;if(e.y>H+40){hp-=e.boss?20:8;e.y=H+100;ui()}});
+for(let e of enemies){for(let l of lasers){if(Math.hypot(e.x-l.x,e.y-l.y)<e.r+5){l.y=-100;e.hp-=1+up.power;if(e.hp<=0){score+=e.boss?500:20;let n=e.boss?12:1;for(let i=0;i<n;i++)gems.push({x:e.x+(Math.random()-.5)*25,y:e.y+(Math.random()-.5)*20,vx:0,vy:0});burst(e.x,e.y,'#ff70e5')}}}}
+enemies=enemies.filter(e=>e.hp>0&&e.y<H+60);
+gems.forEach(g=>{let dx=player.x-g.x,dy=player.y-g.y,d=Math.hypot(dx,dy),range=75+up.magnet*45;if(d<range){g.vx+=dx/(d||1)*.5;g.vy+=dy/(d||1)*.5}g.x+=g.vx;g.y+=g.vy;g.vx*=.94;g.vy*=.94;if(d<18){g.y=-999;crystals++;ui()}});gems=gems.filter(g=>g.y>-100);
+if(frame%120===0&&hp<100)hp=Math.min(100,hp+1);
+particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life--});particles=particles.filter(p=>p.life>0);
+if(hp<=0){playing=false;$('over').classList.remove('hidden');$('finalScore').textContent='Score : '+score+' • Cristaux : '+crystals}
+}
+function draw(){ctx.clearRect(0,0,W,H);ctx.fillStyle='#071027';ctx.fillRect(0,0,W,H);stars.forEach(s=>{ctx.fillStyle='rgba(126,218,255,'+(.25+s.s*.2)+')';ctx.fillRect(s.x,s.y,s.s,s.s)});
+gems.forEach(g=>{ctx.save();ctx.translate(g.x,g.y);ctx.rotate(frame*.03);ctx.shadowBlur=12;ctx.shadowColor='#49f4ff';ctx.fillStyle='#7af8ff';ctx.beginPath();ctx.moveTo(0,-6);ctx.lineTo(5,0);ctx.lineTo(0,6);ctx.lineTo(-5,0);ctx.fill();ctx.restore()});
+lasers.forEach(l=>{ctx.shadowBlur=14;ctx.shadowColor='#53efff';ctx.strokeStyle='#a8ffff';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(l.x,l.y);ctx.lineTo(l.x,l.y+15);ctx.stroke()});
+enemies.forEach(enemyDraw);particles.forEach(p=>{ctx.globalAlpha=p.life/25;ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,3,3)});ctx.globalAlpha=1;
+fleet.forEach((f,i)=>ship(player.x+(i%2?35:-35),player.y+15, .62,true));ship(player.x,player.y,1,false);
+}
+function loop(){update();draw();requestAnimationFrame(loop)}reset();resize();loop();
+function move(e){if(!playing||paused)return;const r=canvas.getBoundingClientRect();player.x=Math.max(25,Math.min(W-25,e.clientX-r.left));player.y=Math.max(30,Math.min(H-30,e.clientY-r.top))}
+canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);move(e)});canvas.addEventListener('pointermove',e=>{if(e.buttons||e.pointerType==='touch')move(e)});
+function show(which){['menu','shop','over'].forEach(id=>$(id).classList.toggle('hidden',id!==which));$('overlay').classList.remove('hidden')}
+$('start').onclick=()=>{reset();playing=true;$('overlay').classList.add('hidden')};$('again').onclick=()=>{$('over').classList.add('hidden');reset();playing=true};$('pause').onclick=()=>{if(!playing)return;paused=!paused;$('pause').textContent=paused?'▶ REPRENDRE':'Ⅱ PAUSE'};
+$('shopBtn').onclick=()=>{if(!playing)return;paused=true;show('shop')};$('resume').onclick=()=>{$('overlay').classList.add('hidden');paused=false};
+$('boost').onclick=()=>{if(playing&&!paused&&crystals>=20){crystals-=20;boost=100;hp=Math.min(100,hp+10);ui()}};
+document.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{let k=b.dataset.buy,cost={ship:150,rate:100,power:125,magnet:100}[k];if(crystals<cost)return;b.disabled=true;crystals-=cost;if(k==='ship')fleet.push({});else up[k]++;ui();b.textContent='ACHETÉ';});
+})();
+</script></body></html>
