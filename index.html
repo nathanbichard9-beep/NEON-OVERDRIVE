@@ -68,17 +68,24 @@ function setMusic(on){
       musicCtx=new AC();
       const sampleRate=musicCtx.sampleRate,duration=8,length=Math.floor(sampleRate*duration);
       const buffer=musicCtx.createBuffer(1,length,sampleRate),data=buffer.getChannelData(0);
-      const chords=[[130.81,164.81,196,246.94],[110,130.81,164.81,196],[87.31,110,130.81,164.81],[98,123.47,146.83,196]];
-      const melody=[[523.25,659.25,783.99,659.25],[440,523.25,659.25,523.25],[349.23,440,523.25,440],[392,493.88,587.33,493.88]];
+      // Nouvelle boucle : électro arcade plus rapide, avec arpège, basse et pulsation.
+      const roots=[110,82.41,98,73.42];
+      const scales=[[0,7,12,7,16,12,7,12],[0,7,12,7,14,12,7,12],[0,7,12,7,15,12,7,12],[0,7,12,7,14,12,7,12]];
       for(let i=0;i<length;i++){
-        const t=i/sampleRate,bar=Math.floor(t/2)%4,local=t%2;
+        const t=i/sampleRate,bar=Math.floor(t/2)%4,beat=t%0.5,step=Math.floor((t%2)/0.25);
+        const root=roots[bar],note=root*Math.pow(2,scales[bar][step]/12);
+        const arpEnv=Math.exp(-beat*9);
+        const bassEnv=Math.exp(-(t%0.5)*7);
+        const kickPhase=t%0.5;
+        const kickFreq=48+75*Math.exp(-kickPhase*24);
         let v=0;
-        for(let j=0;j<4;j++)v+=Math.sin(2*Math.PI*chords[bar][j]*t)*0.018;
-        v+=Math.sin(2*Math.PI*(chords[bar][0]/2)*t)*0.045;
-        const step=Math.floor(local/0.5),within=local%0.5,env=Math.exp(-within*5);
-        v+=Math.sin(2*Math.PI*melody[bar][step]*t)*0.055*env;
-        v+=Math.sin(2*Math.PI*55*t)*0.012*(0.5+0.5*Math.sin(2*Math.PI*t));
-        data[i]=v;
+        v+=(Math.sin(2*Math.PI*note*t)+0.32*Math.sin(4*Math.PI*note*t))*0.075*arpEnv;
+        v+=(Math.sin(2*Math.PI*root*t)+0.35*Math.sin(4*Math.PI*root*t))*0.10*bassEnv;
+        v+=Math.sin(2*Math.PI*kickFreq*kickPhase)*0.12*Math.exp(-kickPhase*13);
+        const padFreq=root*2;
+        v+=(Math.sin(2*Math.PI*padFreq*t)+Math.sin(2*Math.PI*padFreq*1.5*t))*0.018;
+        const fade=Math.min(1,t*30,(duration-t)*30);
+        data[i]=Math.max(-0.8,Math.min(0.8,v*fade));
       }
       musicSource=musicCtx.createBufferSource();musicSource.buffer=buffer;musicSource.loop=true;
       musicGain=musicCtx.createGain();musicGain.gain.value=0;
