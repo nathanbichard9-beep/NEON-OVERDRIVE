@@ -51,13 +51,46 @@ button:active{transform:scale(.96);filter:brightness(1.4)}button.primary{backgro
 <button class="primary" id="resume">REPRENDRE</button></div>
 <div class="panel hidden" id="over"><h2>VAISSEAU DÉTRUIT</h2><p id="finalScore"></p><button class="primary" id="again">RÉESSAYER</button><button id="mainMenu">↩ RETOUR AU MENU PRINCIPAL</button></div></div></div>
 <div class="hint">GLISSE POUR PILOTER • TIRS AUTOMATIQUES</div>
-<div id="controls"><button id="pause">Ⅱ PAUSE</button><button id="shopBtn">✦ HANGAR</button><button id="boost">⚡ SURCHARGE</button></div>
+<div id="controls"><button id="musicToggle" aria-pressed="false">♫ MUSIQUE : OFF</button><button id="pause">Ⅱ PAUSE</button><button id="shopBtn">✦ HANGAR</button><button id="boost">⚡ SURCHARGE</button></div>
 </div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 (()=>{const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');let W=0,H=0,dpr=1;
 function resize(){const r=canvas.getBoundingClientRect();dpr=Math.min(window.devicePixelRatio||1,2);W=r.width;H=r.height;canvas.width=W*dpr;canvas.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}if('ResizeObserver' in window){new ResizeObserver(resize).observe(canvas)}else{window.addEventListener('resize',resize)}resize();
 const $=id=>document.getElementById(id);
+let musicCtx=null,musicSource=null,musicGain=null,musicOn=false;
+function setMusic(on){
+  const btn=$('musicToggle');
+  try{
+    if(on&&!musicSource){
+      const AC=window.AudioContext||window.webkitAudioContext;
+      if(!AC)throw new Error('Audio indisponible');
+      musicCtx=new AC();
+      const sampleRate=musicCtx.sampleRate,duration=8,length=Math.floor(sampleRate*duration);
+      const buffer=musicCtx.createBuffer(1,length,sampleRate),data=buffer.getChannelData(0);
+      const chords=[[130.81,164.81,196,246.94],[110,130.81,164.81,196],[87.31,110,130.81,164.81],[98,123.47,146.83,196]];
+      const melody=[[523.25,659.25,783.99,659.25],[440,523.25,659.25,523.25],[349.23,440,523.25,440],[392,493.88,587.33,493.88]];
+      for(let i=0;i<length;i++){
+        const t=i/sampleRate,bar=Math.floor(t/2)%4,local=t%2;
+        let v=0;
+        for(let j=0;j<4;j++)v+=Math.sin(2*Math.PI*chords[bar][j]*t)*0.018;
+        v+=Math.sin(2*Math.PI*(chords[bar][0]/2)*t)*0.045;
+        const step=Math.floor(local/0.5),within=local%0.5,env=Math.exp(-within*5);
+        v+=Math.sin(2*Math.PI*melody[bar][step]*t)*0.055*env;
+        v+=Math.sin(2*Math.PI*55*t)*0.012*(0.5+0.5*Math.sin(2*Math.PI*t));
+        data[i]=v;
+      }
+      musicSource=musicCtx.createBufferSource();musicSource.buffer=buffer;musicSource.loop=true;
+      musicGain=musicCtx.createGain();musicGain.gain.value=0;
+      musicSource.connect(musicGain);musicGain.connect(musicCtx.destination);musicSource.start();
+    }
+    if(on&&musicCtx.state==='suspended')musicCtx.resume().catch(()=>{});
+    musicOn=!!on;
+    if(musicGain)musicGain.gain.setTargetAtTime(musicOn?0.55:0,musicCtx.currentTime,0.18);
+    if(btn){btn.textContent=musicOn?'♫ MUSIQUE : ON':'♫ MUSIQUE : OFF';btn.setAttribute('aria-pressed',String(musicOn));}
+  }catch(e){musicOn=false;if(btn){btn.textContent='♫ AUDIO INDISPONIBLE';btn.setAttribute('aria-pressed','false');}}
+}
+
 let player,remotePlayer=null,lasers,enemies,gems,particles,fleet,stars,score=0,crystals=0,wave=1,hp=100,playing=false,paused=false,frame=0,fire=0,spawn=0,boss=false,boost=0,up={rate:0,power:0,magnet:0};let peer=null,conn=null,netMode="solo",netReady=false,lastNet=0;
 function reset(){player={x:W/2,y:H*.78};remotePlayer=null;lasers=[];enemies=[];gems=[];particles=[];fleet=[];stars=Array.from({length:90},()=>({x:Math.random()*W,y:Math.random()*H,s:.4+Math.random()*1.8}));score=0;wave=1;hp=100;frame=0;fire=0;spawn=0;boss=false;boost=0;ui()}
 function ui(){$('gems').textContent=crystals;$('score').textContent=score;$('wave').textContent=wave;$('hp').textContent=Math.max(0,Math.ceil(hp));$('bossTag').textContent=wave%5===0?'BOSS EN APPROCHE':'SECTEUR '+String(wave).padStart(2,'0')}
@@ -94,7 +127,7 @@ let netSnapshot=null;function applySnapshot(d){player=d.player;remotePlayer=d.re
 function move(e){if(!playing||paused)return;const r=canvas.getBoundingClientRect(),x=Math.max(25,Math.min(W-25,e.clientX-r.left)),y=Math.max(30,Math.min(H-30,e.clientY-r.top));if(netMode==="guest"){if(conn&&conn.open)conn.send({type:"move",x,y});return;}player.x=x;player.y=y}
 canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);move(e)});canvas.addEventListener('pointermove',e=>{if(e.buttons||e.pointerType==='touch')move(e)});
 function show(which){['menu','shop','over'].forEach(id=>$(id).classList.toggle('hidden',id!==which));$('overlay').classList.remove('hidden')}
-function startGame(mode){netMode=mode;reset();playing=true;$('overlay').classList.add('hidden')} $('start').onclick=()=>startGame('solo');$('hostGame').onclick=()=>{if(!window.Peer){$('netStatus').textContent='Connexion indisponible : recharge la page';return}if(peer)peer.destroy();netMode='host';peer=new Peer();$('netStatus').textContent='Création de la partie…';peer.on('open',id=>{$('netStatus').textContent='Code ami : '+id+' (communique-le à ton ami)';alert('CODE DE LA PARTIE : '+id+'\\nEnvoie ce code à ton ami pour qu’il te rejoigne.');startGame('host')});peer.on('connection',c=>{conn=c;remotePlayer={x:W*.7,y:H*.78};c.on('data',d=>{if(d.type==='move'&&remotePlayer){remotePlayer.x=d.x;remotePlayer.y=d.y}});c.on('open',()=>{$('netStatus').textContent='Ami connecté !';});c.on('close',()=>{remotePlayer=null;conn=null;$('netStatus').textContent='Ami déconnecté';});});peer.on('error',()=>{$('netStatus').textContent='Erreur réseau. Réessaie.'})};$('joinGame').onclick=()=>{const code=prompt('Entre le code de la partie :');if(!code)return;reset();if(!window.Peer){$('netStatus').textContent='Connexion indisponible : recharge la page';return}if(peer)peer.destroy();netMode='guest';peer=new Peer();$('netStatus').textContent='Connexion…';peer.on('open',()=>{conn=peer.connect(code.trim());conn.on('open',()=>{netReady=true;$('netStatus').textContent='Connecté !';playing=true;$('overlay').classList.add('hidden')});conn.on('data',d=>{if(d.type==='state')netSnapshot=d.data});conn.on('error',()=>{$('netStatus').textContent='Connexion impossible'});});peer.on('error',()=>{$('netStatus').textContent='Code invalide ou partie introuvable'})};$('again').onclick=()=>{$('over').classList.add('hidden');reset();playing=true};$('mainMenu').onclick=()=>{playing=false;paused=false;if(conn){conn.close();conn=null}if(peer){peer.destroy();peer=null}remotePlayer=null;netMode='solo';show('menu');$('pause').textContent='Ⅱ PAUSE'};$('pause').onclick=()=>{if(!playing)return;paused=!paused;$('pause').textContent=paused?'▶ REPRENDRE':'Ⅱ PAUSE'};
+function startGame(mode){netMode=mode;reset();playing=true;$('overlay').classList.add('hidden')} $('musicToggle').onclick=()=>setMusic(!musicOn);$('start').onclick=()=>startGame('solo');$('hostGame').onclick=()=>{if(!window.Peer){$('netStatus').textContent='Connexion indisponible : recharge la page';return}if(peer)peer.destroy();netMode='host';peer=new Peer();$('netStatus').textContent='Création de la partie…';peer.on('open',id=>{$('netStatus').textContent='Code ami : '+id+' (communique-le à ton ami)';alert('CODE DE LA PARTIE : '+id+'\\nEnvoie ce code à ton ami pour qu’il te rejoigne.');startGame('host')});peer.on('connection',c=>{conn=c;remotePlayer={x:W*.7,y:H*.78};c.on('data',d=>{if(d.type==='move'&&remotePlayer){remotePlayer.x=d.x;remotePlayer.y=d.y}});c.on('open',()=>{$('netStatus').textContent='Ami connecté !';});c.on('close',()=>{remotePlayer=null;conn=null;$('netStatus').textContent='Ami déconnecté';});});peer.on('error',()=>{$('netStatus').textContent='Erreur réseau. Réessaie.'})};$('joinGame').onclick=()=>{const code=prompt('Entre le code de la partie :');if(!code)return;reset();if(!window.Peer){$('netStatus').textContent='Connexion indisponible : recharge la page';return}if(peer)peer.destroy();netMode='guest';peer=new Peer();$('netStatus').textContent='Connexion…';peer.on('open',()=>{conn=peer.connect(code.trim());conn.on('open',()=>{netReady=true;$('netStatus').textContent='Connecté !';playing=true;$('overlay').classList.add('hidden')});conn.on('data',d=>{if(d.type==='state')netSnapshot=d.data});conn.on('error',()=>{$('netStatus').textContent='Connexion impossible'});});peer.on('error',()=>{$('netStatus').textContent='Code invalide ou partie introuvable'})};$('again').onclick=()=>{$('over').classList.add('hidden');reset();playing=true};$('mainMenu').onclick=()=>{playing=false;paused=false;if(conn){conn.close();conn=null}if(peer){peer.destroy();peer=null}remotePlayer=null;netMode='solo';show('menu');$('pause').textContent='Ⅱ PAUSE'};$('pause').onclick=()=>{if(!playing)return;paused=!paused;$('pause').textContent=paused?'▶ REPRENDRE':'Ⅱ PAUSE'};
 $('shopBtn').onclick=()=>{if(!playing)return;paused=true;show('shop')};$('resume').onclick=()=>{$('overlay').classList.add('hidden');paused=false};
 $('boost').onclick=()=>{if(playing&&!paused&&crystals>=20){crystals-=20;boost=100;hp=Math.min(100,hp+10);ui()}};
 document.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{let k=b.dataset.buy,cost={ship:150,rate:100,power:125,magnet:100}[k];if(crystals<cost)return;b.disabled=true;crystals-=cost;if(k==='ship')fleet.push({});else up[k]++;ui();b.textContent='ACHETÉ';});
