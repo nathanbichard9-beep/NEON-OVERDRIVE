@@ -11,7 +11,7 @@ body{background:radial-gradient(ellipse at 50% 0%,#172b55 0,#080f25 46%,#030611 
 header{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:#071022dc;border-bottom:1px solid #50dcff44;gap:8px}
 .logo{font-size:clamp(16px,4vw,24px);font-weight:1000;letter-spacing:2px;color:var(--cyan);text-shadow:0 0 18px #00cfff88}.logo span{color:var(--violet)}
 .stats{display:flex;gap:clamp(6px,2vw,16px);font-size:11px;color:#a9c8e7}.stats b{color:white;font-size:13px}
-#arena{position:relative;flex:1;min-height:0;overflow:hidden}canvas{width:100%;height:100%;display:block;touch-action:none}
+#arena{position:relative;flex:1;min-height:0;overflow:hidden}#game,#threeScene{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}#game{opacity:0;pointer-events:auto;z-index:2}#threeScene{z-index:1}#hud,#bossbar{z-index:3}#overlay{z-index:4}
 #hud{position:absolute;inset:9px 10px auto;display:flex;justify-content:space-between;pointer-events:none;gap:8px;font-size:11px}
 .pill{padding:6px 10px;border:1px solid #48dfff55;border-radius:30px;background:#07162dcc;box-shadow:0 0 14px #00cfff18}
 #bossbar{position:absolute;top:43px;left:18%;width:64%;height:7px;background:#171b38;border:1px solid #ff72d966;border-radius:20px;overflow:hidden;display:none}
@@ -35,7 +35,7 @@ button:active{transform:scale(.97);filter:brightness(1.25)}button.primary{backgr
 </style></head>
 <body><div id="app">
 <header><div class="logo">NEON <span>OVERDRIVE</span></div><div class="stats"><span>◆ <b id="crystals">0</b></span><span>PTS <b id="score">0</b></span><span>VAGUE <b id="wave">1</b></span><span>LVL <b id="level">1</b></span></div></header>
-<main id="arena"><canvas id="game" aria-label="Arène de jeu"></canvas><div id="hud"><div class="pill">COQUE <b id="hp">100</b>%</div><div class="pill" id="sector">SECTEUR 01</div></div><div id="bossbar"><div id="bossfill"></div></div>
+<main id="arena"><canvas id="game" aria-label="Arène de jeu"></canvas><canvas id="threeScene" aria-label="Vue 3D de l'arène spatiale"></canvas><div id="hud"><div class="pill">COQUE <b id="hp">100</b>%</div><div class="pill" id="sector">SECTEUR 01</div></div><div id="bossbar"><div id="bossfill"></div></div>
 <div id="overlay"><section class="panel" id="menu"><div class="kicker">✦ ARCADE SPATIALE • ÉDITION RECONSTRUITE</div><h1>NEON<br>OVERDRIVE</h1><p>La galaxie est tombée sous le contrôle des machines. Pilote ton intercepteur, améliore ton arsenal et tiens le plus longtemps possible face aux vagues ennemies.</p><div class="featuregrid"><div class="feature"><b>⚡ COMBAT</b><small>Lasers & combos</small></div><div class="feature"><b>☠ BOSS</b><small>Toutes les 5 vagues</small></div><div class="feature"><b>◆ HANGAR</b><small>Améliorations</small></div></div><p><b>COMMANDES :</b> glisse ton doigt ou déplace la souris. Les canons tirent automatiquement.</p><div class="actions"><button class="primary" id="start">🚀 LANCER UNE PARTIE</button><button id="host">🌐 CRÉER UNE PARTIE</button><button id="join">🔗 REJOINDRE UN CODE</button><button id="profile">🏆 PROFIL & SCORES</button><button id="shopMenu">🛠️ HANGAR</button><button id="fleetMenu">🚀 FLOTTES & VAISSEAUX</button><button id="guideMenu">❔ GUIDE DES COMMANDES</button></div><p class="note" id="network">Mode solo prêt</p></section>
 <section class="panel hidden" id="shop"><h2>🛠️ HANGAR</h2><p>Équipe ton pilote avec les cristaux récupérés en combat.</p><div class="balance">RÉSERVE : <b id="shopBalance">0</b> ◆</div>
 <div class="shoprow"><div><b>🩹 Réparation</b><small>Restaure jusqu'à 35 PV</small></div><button data-buy="repair">45 ◆</button></div>
@@ -50,7 +50,7 @@ button:active{transform:scale(.97);filter:brightness(1.25)}button.primary{backgr
 <section class="panel hidden" id="profilePanel"><h2>PROFIL DE PILOTE</h2><p>Statistiques conservées sur cet appareil.</p><div class="grid2"><div class="statbox">Boss vaincus<b id="wins">0</b></div><div class="statbox">Défaites<b id="deaths">0</b></div><div class="statbox">Parties jouées<b id="games">0</b></div><div class="statbox">Meilleur score<b id="best">0</b></div></div><h3 style="color:var(--violet);font-size:13px">CLASSEMENT LOCAL</h3><ol id="ranking"></ol><button class="primary" id="profileBack">RETOUR</button></section>
 <section class="panel hidden" id="gameover"><h2>MISSION TERMINÉE</h2><p id="result"></p><div class="actions"><button class="primary" id="retry">↻ REJOUER</button><button id="gameMenu">MENU PRINCIPAL</button></div></section></div></main>
 <div id="controls"><button id="music">♫ MUSIQUE : OFF</button><button id="pause">Ⅱ PAUSE</button><button id="hangar">✦ HANGAR</button><span class="pill" id="record">🏆 0 • 💀 0</span></div></div>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script><script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
 (()=>{'use strict';
 const $=id=>document.getElementById(id),canvas=$('game'),ctx=canvas.getContext('2d');
@@ -109,8 +109,42 @@ particles.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.c
 if(player)drawShip(player.x,player.y,({vanguard:'#64f6ff',phantom:'#bd82ff',titan:'#ffc36e'}[saved.ship]||'#64f6ff'));if(guestShip)drawShip(guestShip.x,guestShip.y,'#ff70d9',.9);ctx.restore();
 const boss=enemies.find(e=>e.boss);$('bossbar').style.display=boss?'block':'none';if(boss)$('bossfill').style.width=(100*Math.max(0,boss.hp/boss.max))+'%';
 }
+
+const scene3D={ready:false,renderer:null,scene:null,camera:null,world:null,ship:null,guest:null,enemyMeshes:[],laserMeshes:[],stars:null};
+function makeShip3D(color,kind='vanguard'){
+ const g=new THREE.Group(),metal=new THREE.MeshStandardMaterial({color,metalness:.72,roughness:.24,emissive:color,emissiveIntensity:.3}),dark=new THREE.MeshStandardMaterial({color:0x14233d,metalness:.85,roughness:.3});
+ const body=new THREE.Mesh(new THREE.CylinderGeometry(.24,kind==='titan'?.52:.34,2.8,10),metal);body.rotation.x=Math.PI/2;g.add(body);
+ const wing=new THREE.Mesh(new THREE.ConeGeometry(kind==='titan'?1.12:.78,kind==='titan'?3.4:3,3),metal);wing.geometry.rotateX(Math.PI/2);wing.position.x=-.95;wing.rotation.z=Math.PI/2;g.add(wing);
+ const wing2=wing.clone();wing2.position.x=.95;wing2.rotation.z=-Math.PI/2;g.add(wing2);
+ const cockpit=new THREE.Mesh(new THREE.SphereGeometry(.3,16,12),new THREE.MeshPhysicalMaterial({color:0x9afaff,metalness:.35,roughness:.08,transparent:true,opacity:.88,emissive:0x1b9dbb,emissiveIntensity:.5}));cockpit.scale.set(.72,.5,1.35);cockpit.position.z=-.35;g.add(cockpit);
+ for(const side of [-1,1]){const engine=new THREE.Mesh(new THREE.CylinderGeometry(.12,.19,.7,10),dark);engine.rotation.x=Math.PI/2;engine.position.set(side*(kind==='titan'?.8:.48),0,1.25);g.add(engine);const flame=new THREE.Mesh(new THREE.ConeGeometry(.13,.8,10),new THREE.MeshBasicMaterial({color}));flame.rotation.x=-Math.PI/2;flame.position.set(engine.position.x,0,1.95);g.add(flame)}
+ if(kind==='titan'){const armor=new THREE.Mesh(new THREE.BoxGeometry(1.6,.22,.8),dark);armor.position.z=.45;g.add(armor)}
+ return g;
+}
+function initThree(){try{
+ if(!window.THREE)throw Error('Three.js non chargé');const el=$('threeScene'),renderer=new THREE.WebGLRenderer({canvas:el,alpha:false,antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setClearColor(0x030817,1);renderer.outputColorSpace=THREE.SRGBColorSpace;scene3D.renderer=renderer;
+ const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x030817,.018);scene3D.scene=scene;
+ const camera=new THREE.PerspectiveCamera(48,1,.1,120);camera.position.set(0,20,25);camera.lookAt(0,0,0);scene3D.camera=camera;
+ scene.add(new THREE.HemisphereLight(0x9bdfff,0x10132f,2));const key=new THREE.PointLight(0x38cfff,55,55);key.position.set(-5,10,3);scene.add(key);const rim=new THREE.PointLight(0xb14cff,42,45);rim.position.set(6,8,-8);scene.add(rim);
+ const floor=new THREE.Mesh(new THREE.PlaneGeometry(40,48),new THREE.MeshStandardMaterial({color:0x071329,metalness:.45,roughness:.75,emissive:0x07152b,emissiveIntensity:.6}));floor.rotation.x=-Math.PI/2;floor.position.y=-1.3;scene.add(floor);
+ const grid=new THREE.GridHelper(40,40,0x1c8cb2,0x183052);grid.position.y=-1.27;grid.material.transparent=true;grid.material.opacity=.32;scene.add(grid);
+ scene3D.world=new THREE.Group();scene.add(scene3D.world);scene3D.ship=makeShip3D(0x5df4ff,saved.ship||'vanguard');scene3D.world.add(scene3D.ship);scene3D.guest=makeShip3D(0xff70d9,'phantom');scene3D.world.add(scene3D.guest);scene3D.guest.visible=false;
+ const geo=new THREE.BufferGeometry(),pos=[];for(let i=0;i<260;i++)pos.push(rand(-19,19),rand(2,17),rand(-23,15));geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));scene3D.stars=new THREE.Points(geo,new THREE.PointsMaterial({color:0x9adfff,size:.09,transparent:true,opacity:.85}));scene.add(scene3D.stars);
+ const resize=()=>{const w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()};new ResizeObserver(resize).observe(el);resize();scene3D.ready=true;
+ }catch(e){console.warn('3D indisponible',e);$('threeScene').style.display='none';$('game').style.opacity='1'}}
+function renderThree(){if(!scene3D.ready)return;const s=scene3D,world=s.world,wx=x=>(x/W-.5)*23,wz=y=>(y/H-.5)*27;
+ if(player){s.ship.visible=true;s.ship.position.set(wx(player.x),-.1,wz(player.y));s.ship.rotation.y=Math.sin(frame*.035)*.08}else s.ship.visible=false;
+ const color={vanguard:0x5df4ff,phantom:0xbd82ff,titan:0xffc36e}[saved.ship||'vanguard'];s.ship.traverse(o=>{if(o.isMesh&&o.material.emissive)o.material.emissive.setHex(color)});
+ s.guest.visible=!!guestShip;if(guestShip)s.guest.position.set(wx(guestShip.x),-.05,wz(guestShip.y));
+ while(s.enemyMeshes.length>enemies.length){const o=s.enemyMeshes.pop();world.remove(o);o.geometry.dispose();o.material.dispose()}
+ enemies.forEach((e,i)=>{let o=s.enemyMeshes[i];if(!o){o=new THREE.Mesh(e.boss?new THREE.IcosahedronGeometry(1,2):new THREE.OctahedronGeometry(1,0),new THREE.MeshStandardMaterial({color:e.boss?[0xff55c9,0x53dfff,0xffb45f][e.type]:0x9b62ff,metalness:.6,roughness:.26,emissive:e.boss?0x65134c:0x30105b,emissiveIntensity:.8,flatShading:true}));world.add(o);s.enemyMeshes[i]=o}o.visible=true;o.position.set(wx(e.x),e.boss?.15:0,wz(e.y));o.scale.setScalar(e.r*(e.boss?1.45:1)*.055);o.rotation.x=frame*.008;o.rotation.y=frame*.012});
+ while(s.laserMeshes.length<lasers.length){const m=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,1,8),new THREE.MeshBasicMaterial({color:0x68faff}));world.add(m);s.laserMeshes.push(m)}
+ lasers.forEach((l,i)=>{const m=s.laserMeshes[i];m.visible=l.life>0;m.position.set(wx(l.x),.15,wz(l.y));m.scale.set(1,Math.max(.4,l.v*.17),1);m.material.color.set(l.color||'#68faff')});s.laserMeshes.slice(lasers.length).forEach(m=>m.visible=false);
+ s.stars.rotation.y=Math.sin(frame*.001)*.025;s.renderer.render(s.scene,s.camera)}
+initThree();
+
 function finish(){ended=true;playing=false;saved.deaths++;saved.games++;saved.best=Math.max(saved.best,score);saved.board.push(score);saved.board.sort((a,b)=>b-a);saved.board=saved.board.slice(0,10);persist();updateHud();$('result').textContent='Score : '+score+' • Vague : '+wave+' • Cristaux : '+crystals;show('gameover')}
-function loop(t){const dt=Math.min(40,t-(last||t));last=t;update(dt);draw();raf=requestAnimationFrame(loop)}raf=requestAnimationFrame(loop);
+function loop(t){const dt=Math.min(40,t-(last||t));last=t;update(dt);draw();renderThree();raf=requestAnimationFrame(loop)}raf=requestAnimationFrame(loop);
 function show(id){['menu','shop','profilePanel','gameover','fleetPanel','guidePanel'].forEach(k=>$(k).classList.toggle('hidden',k!==id));$('overlay').classList.remove('hidden')}
 function startGame(m='solo'){mode=m;reset();if(mode==='host'&&conn?.open)remoteTarget={x:W*.72,y:H*.78,tx:W*.72,ty:H*.78};$('overlay').classList.add('hidden')}
 function move(e){if(!playing||paused||!player)return;const r=canvas.getBoundingClientRect(),x=Math.max(24,Math.min(W-24,e.clientX-r.left)),y=Math.max(28,Math.min(H-28,e.clientY-r.top));if(mode==='guest'){if(conn?.open)conn.send({type:'move',x,y});return}player.tx=x;player.ty=y}
