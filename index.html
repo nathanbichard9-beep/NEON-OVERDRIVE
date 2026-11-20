@@ -112,14 +112,39 @@ const boss=enemies.find(e=>e.boss);$('bossbar').style.display=boss?'block':'none
 
 const scene3D={ready:false,renderer:null,scene:null,camera:null,world:null,ship:null,guest:null,enemyMeshes:[],laserMeshes:[],stars:null};
 function makeShip3D(color,kind='vanguard'){
- const g=new THREE.Group(),metal=new THREE.MeshStandardMaterial({color,metalness:.72,roughness:.24,emissive:color,emissiveIntensity:.3}),dark=new THREE.MeshStandardMaterial({color:0x14233d,metalness:.85,roughness:.3});
- const body=new THREE.Mesh(new THREE.CylinderGeometry(.24,kind==='titan'?.52:.34,2.8,10),metal);body.rotation.x=Math.PI/2;g.add(body);
- const wing=new THREE.Mesh(new THREE.ConeGeometry(kind==='titan'?1.12:.78,kind==='titan'?3.4:3,3),metal);wing.geometry.rotateX(Math.PI/2);wing.position.x=-.95;wing.rotation.z=Math.PI/2;g.add(wing);
- const wing2=wing.clone();wing2.position.x=.95;wing2.rotation.z=-Math.PI/2;g.add(wing2);
- const cockpit=new THREE.Mesh(new THREE.SphereGeometry(.3,16,12),new THREE.MeshPhysicalMaterial({color:0x9afaff,metalness:.35,roughness:.08,transparent:true,opacity:.88,emissive:0x1b9dbb,emissiveIntensity:.5}));cockpit.scale.set(.72,.5,1.35);cockpit.position.z=-.35;g.add(cockpit);
- for(const side of [-1,1]){const engine=new THREE.Mesh(new THREE.CylinderGeometry(.12,.19,.7,10),dark);engine.rotation.x=Math.PI/2;engine.position.set(side*(kind==='titan'?.8:.48),0,1.25);g.add(engine);const flame=new THREE.Mesh(new THREE.ConeGeometry(.13,.8,10),new THREE.MeshBasicMaterial({color}));flame.rotation.x=-Math.PI/2;flame.position.set(engine.position.x,0,1.95);g.add(flame)}
- if(kind==='titan'){const armor=new THREE.Mesh(new THREE.BoxGeometry(1.6,.22,.8),dark);armor.position.z=.45;g.add(armor)}
- return g;
+ const g=new THREE.Group();
+ const metal=new THREE.MeshStandardMaterial({color,metalness:.78,roughness:.25,emissive:color,emissiveIntensity:.24});
+ const edge=new THREE.MeshStandardMaterial({color:0x253b58,metalness:.88,roughness:.3});
+ const dark=new THREE.MeshStandardMaterial({color:0x091426,metalness:.82,roughness:.28});
+ const glow=new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:2.1,metalness:.2,roughness:.2});
+ const glass=new THREE.MeshPhysicalMaterial({color:0x70dcff,metalness:.35,roughness:.08,clearcoat:1,clearcoatRoughness:.05,transparent:true,opacity:.82});
+ const add=(geo,mat,x,y,z,sx=1,sy=1,sz=1,rz=0)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.rotation.z=rz;g.add(m);return m};
+ const heavy=kind==='titan',stealth=kind==='phantom';
+ add(new THREE.CylinderGeometry(heavy?.36:.25,heavy?.5:.32,3.05,12),metal,0,0,.05);
+ const nose=add(new THREE.ConeGeometry(heavy?.34:.25,1.35,12),edge,0,0,-1.95);nose.rotation.x=-Math.PI/2;
+ add(new THREE.BoxGeometry(heavy?.64:.42,.18,1.7),edge,0,.2,.25);
+ add(new THREE.BoxGeometry(.16,.13,1.5),glow,0,.25,-.25);
+ for(const side of [-1,1]){
+  const wing=add(new THREE.BoxGeometry(heavy?1.8:1.55,.14,2.05),metal,side*(heavy?1.12:.94),-.02,.05,1,1,1,side*(heavy?.13:.2));wing.rotation.y=side*.12;
+  add(new THREE.BoxGeometry(heavy?1.55:1.3,.07,.18),glow,side*(heavy?1.12:.94),.075,-.82,1,1,1,side*.13);
+  add(new THREE.BoxGeometry(.62,.11,.82),edge,side*(heavy?1.5:1.22),-.02,.62,1,1,1,side*.13);
+  const fin=add(new THREE.BoxGeometry(.13,.52,.72),edge,side*(heavy?1.92:1.65),.22,.35);fin.rotation.z=side*.12;
+  add(new THREE.CylinderGeometry(.11,.14,1.05,10),dark,side*(heavy?1.18:1.0),-.13,-.48,1,1,1,Math.PI/2);
+  add(new THREE.SphereGeometry(.12,12,8),glow,side*(heavy?1.18:1.0),-.13,-1.02);
+  const ex=side*(heavy?.78:.58),engine=add(new THREE.CylinderGeometry(.2,.27,.82,12),edge,ex,-.02,1.45);engine.rotation.x=Math.PI/2;
+  const rim=add(new THREE.TorusGeometry(.205,.045,8,16),glow,ex,-.02,1.88);rim.rotation.x=Math.PI/2;
+  const flame=add(new THREE.ConeGeometry(.16,.95,12),glow,ex,-.02,2.42);flame.rotation.x=Math.PI/2;flame.userData.flame=true;flame.userData.phase=side*.8;
+  add(new THREE.BoxGeometry(.34,.28,.42),dark,ex,-.02,.98);
+ }
+ add(new THREE.SphereGeometry(.36,20,14),edge,0,.2,-.58,.9,.52,1.5);
+ add(new THREE.SphereGeometry(.29,20,14),glass,0,.25,-.66,.86,.48,1.48);
+ add(new THREE.BoxGeometry(.055,.045,.78),glow,0,.49,-.58);
+ add(new THREE.BoxGeometry(.22,.48,.88),metal,0,.25,1.12);
+ add(new THREE.BoxGeometry(.7,.12,.45),edge,0,.3,1.18);
+ add(new THREE.SphereGeometry(.12,12,8),glow,0,.47,.72);
+ if(heavy){for(const side of [-1,1]){add(new THREE.BoxGeometry(.5,.3,1.2),edge,side*.48,-.19,.25);add(new THREE.BoxGeometry(.2,.2,.62),glow,side*1.42,.08,-.28)}add(new THREE.BoxGeometry(.9,.2,.55),metal,0,-.18,.9)}
+ else if(stealth){for(const side of [-1,1]){const blade=add(new THREE.BoxGeometry(.12,.48,1.15),edge,side*.55,.2,.55);blade.rotation.z=side*.28}add(new THREE.BoxGeometry(.55,.06,.7),glow,0,.29,.48)}
+ g.userData.kind=kind;g.userData.baseColor=color;return g;
 }
 function initThree(){try{
  if(!window.THREE)throw Error('Three.js non chargé');const el=$('threeScene'),renderer=new THREE.WebGLRenderer({canvas:el,alpha:false,antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setClearColor(0x030817,1);renderer.outputColorSpace=THREE.SRGBColorSpace;scene3D.renderer=renderer;
@@ -140,7 +165,7 @@ function renderThree(){if(!scene3D.ready)return;const s=scene3D,world=s.world,wx
  enemies.forEach((e,i)=>{let o=s.enemyMeshes[i];if(!o){o=new THREE.Mesh(e.boss?new THREE.IcosahedronGeometry(1,2):new THREE.OctahedronGeometry(1,0),new THREE.MeshStandardMaterial({color:e.boss?[0xff55c9,0x53dfff,0xffb45f][e.type]:0x9b62ff,metalness:.6,roughness:.26,emissive:e.boss?0x65134c:0x30105b,emissiveIntensity:.8,flatShading:true}));world.add(o);s.enemyMeshes[i]=o}o.visible=true;o.position.set(wx(e.x),e.boss?.15:0,wz(e.y));o.scale.setScalar(e.r*(e.boss?1.45:1)*.055);o.rotation.x=frame*.008;o.rotation.y=frame*.012});
  while(s.laserMeshes.length<lasers.length){const m=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,1,8),new THREE.MeshBasicMaterial({color:0x68faff}));world.add(m);s.laserMeshes.push(m)}
  lasers.forEach((l,i)=>{const m=s.laserMeshes[i];m.visible=l.life>0;m.position.set(wx(l.x),.15,wz(l.y));m.scale.set(1,Math.max(.4,l.v*.17),1);m.material.color.set(l.color||'#68faff')});s.laserMeshes.slice(lasers.length).forEach(m=>m.visible=false);
- s.stars.rotation.y=Math.sin(frame*.001)*.025;s.renderer.render(s.scene,s.camera)}
+ s.world.traverse(o=>{if(o.userData.flame){const pulse=.78+Math.sin(frame*.32+o.userData.phase)*.22;o.scale.y=pulse;o.material.emissiveIntensity=1.5+pulse}});s.stars.rotation.y=Math.sin(frame*.001)*.025;s.renderer.render(s.scene,s.camera)}
 initThree();
 
 function finish(){ended=true;playing=false;saved.deaths++;saved.games++;saved.best=Math.max(saved.best,score);saved.board.push(score);saved.board.sort((a,b)=>b-a);saved.board=saved.board.slice(0,10);persist();updateHud();$('result').textContent='Score : '+score+' • Vague : '+wave+' • Cristaux : '+crystals;show('gameover')}
