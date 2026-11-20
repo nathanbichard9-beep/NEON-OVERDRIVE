@@ -80,8 +80,8 @@ function update(dt){frame++;stars.forEach(s=>{s.y+=s.speed*dt;if(s.y>H){s.y=0;s.
 if(mode==='guest'){if(netSnapshot){applyState(netSnapshot);if(hp<=0&&!ended)finish()}return}
 const step=Math.min(2,dt/16.67);
 const smooth=1-Math.pow(.78,step);
-if(player){player.x+=(player.tx-player.x)*smooth;player.y+=(player.ty-player.y)*smooth}
-if(remoteTarget&&mode==='host'){remoteTarget.x+=(remoteTarget.tx-remoteTarget.x)*smooth;remoteTarget.y+=(remoteTarget.ty-remoteTarget.y)*smooth}
+if(player){player.x+=(player.tx-player.x)*smooth;player.y+=(player.ty-player.y)*smooth;if(Math.abs(player.tx-player.x)<.05)player.x=player.tx;if(Math.abs(player.ty-player.y)<.05)player.y=player.ty}
+if(remoteTarget&&mode==='host'){remoteTarget.x+=(remoteTarget.tx-remoteTarget.x)*smooth;remoteTarget.y+=(remoteTarget.ty-remoteTarget.y)*smooth;if(Math.abs(remoteTarget.tx-remoteTarget.x)<.05)remoteTarget.x=remoteTarget.tx;if(Math.abs(remoteTarget.ty-remoteTarget.y)<.05)remoteTarget.y=remoteTarget.ty}
 spawnClock+=dt;shotClock+=dt;enemyClock+=dt;
 // Limite les ennemis simultanés pour éviter que la scène 3D sature.
 const maxAlive=Math.min(4+Math.floor(wave/2),10);
@@ -284,7 +284,7 @@ function setUltimateGraphics(on){
  const el=$('threeScene'),w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);r.setSize(w,h,false);
 }
 function renderThree(){if(!scene3D.ready)return;const s=scene3D,world=s.world,wx=x=>(x/W-.5)*23,wz=y=>(y/H-.5)*27;
- if(player){s.ship.visible=true;s.ship.position.set(wx(player.x),-.1,wz(player.y));s.ship.rotation.y=Math.sin(frame*.035)*.08}else s.ship.visible=false;
+ if(player){s.ship.visible=true;s.ship.position.set(wx(player.x),-.1,wz(player.y));s.ship.rotation.y=0}else s.ship.visible=false;
  const color={vanguard:0x5df4ff,phantom:0xbd82ff,titan:0xffc36e}[saved.ship||'vanguard'];s.ship.traverse(o=>{if(o.isMesh&&o.material.emissive)o.material.emissive.setHex(color)});
  // Les achats de drones ajoutent de vrais canons visibles sur la coque.
  const cannonOffsets=upgrades.drone===1?[-1.15]:upgrades.drone===2?[-1.15,1.15]:upgrades.drone>=3?[-1.35,0,1.35]:[];
