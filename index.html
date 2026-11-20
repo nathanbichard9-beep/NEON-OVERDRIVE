@@ -160,7 +160,7 @@ if(player)drawShip(player.x,player.y,({vanguard:'#64f6ff',phantom:'#bd82ff',tita
 const boss=enemies.find(e=>e.boss);$('bossbar').style.display=boss?'block':'none';if(boss)$('bossfill').style.width=(100*Math.max(0,boss.hp/boss.max))+'%';
 }
 
-const scene3D={ready:false,renderer:null,scene:null,camera:null,world:null,ship:null,guest:null,enemyMeshes:[],allyMeshes:[],laserMeshes:[],hostileMeshes:[],trailMeshes:[],trailCursor:0,stars:null,dust:null,ultimate:false,keyLight:null,rimLight:null,floor:null};
+const scene3D={ready:false,renderer:null,scene:null,camera:null,world:null,ship:null,guest:null,enemyMeshes:[],allyMeshes:[],laserMeshes:[],hostileMeshes:[],trailMeshes:[],trailCursor:0,stars:null,dust:null,ultimate:false,ultimateAura:null,ultimateLight:null,keyLight:null,rimLight:null,floor:null};
 function makeShip3D(color,kind='vanguard'){
  const g=new THREE.Group();
  const metal=new THREE.MeshStandardMaterial({color,metalness:.78,roughness:.25,emissive:color,emissiveIntensity:.24});
@@ -259,16 +259,18 @@ function makeSaucer3D(){
  return g;
 }
 function initThree(){try{
- if(!window.THREE)throw Error('Three.js non chargé');const el=$('threeScene'),renderer=new THREE.WebGLRenderer({canvas:el,alpha:false,antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.25));renderer.setClearColor(0x030817,1);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;renderer.toneMappingExposure=1;scene3D.renderer=renderer;
+ if(!window.THREE)throw Error('Three.js non chargé');const el=$('threeScene'),renderer=new THREE.WebGLRenderer({canvas:el,alpha:false,antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.35));renderer.setClearColor(0x030817,1);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;renderer.toneMappingExposure=1;scene3D.renderer=renderer;
  const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x030817,.018);scene3D.scene=scene;
  const camera=new THREE.PerspectiveCamera(48,1,.1,120);camera.position.set(0,20,25);camera.lookAt(0,0,0);scene3D.camera=camera;
  scene.add(new THREE.HemisphereLight(0x9bdfff,0x10132f,2));const key=new THREE.PointLight(0x38cfff,55,55);key.position.set(-5,10,3);scene.add(key);scene3D.keyLight=key;const rim=new THREE.PointLight(0xb14cff,42,45);rim.position.set(6,8,-8);scene.add(rim);scene3D.rimLight=rim;
  const floor=new THREE.Mesh(new THREE.PlaneGeometry(40,48,32,32),new THREE.MeshStandardMaterial({color:0x071329,metalness:.45,roughness:.75,emissive:0x07152b,emissiveIntensity:.6}));floor.rotation.x=-Math.PI/2;floor.position.y=-1.3;scene.add(floor);scene3D.floor=floor;
  const grid=new THREE.GridHelper(40,40,0x1c8cb2,0x183052);grid.position.y=-1.27;grid.material.transparent=true;grid.material.opacity=.32;scene.add(grid);
  scene3D.world=new THREE.Group();scene.add(scene3D.world);scene3D.ship=makeShip3D(0x5df4ff,saved.ship||'vanguard');scene3D.world.add(scene3D.ship);scene3D.guest=makeShip3D(0xff70d9,'phantom');scene3D.world.add(scene3D.guest);scene3D.guest.visible=false;
- const geo=new THREE.BufferGeometry(),pos=[];for(let i=0;i<260;i++)pos.push(rand(-19,19),rand(2,17),rand(-23,15));geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));scene3D.stars=new THREE.Points(geo,new THREE.PointsMaterial({color:0x9adfff,size:.09,transparent:true,opacity:.85}));scene.add(scene3D.stars);
- const dustGeo=new THREE.BufferGeometry(),dustPos=[];for(let i=0;i<1500;i++)dustPos.push(rand(-24,24),rand(-.5,15),rand(-30,22));dustGeo.setAttribute('position',new THREE.Float32BufferAttribute(dustPos,3));scene3D.dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0x6aaeff,size:.035,transparent:true,opacity:.35,sizeAttenuation:true}));scene.add(scene3D.dust);scene3D.dust.visible=false;
- const resize=()=>{const w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);renderer.setPixelRatio(Math.min(devicePixelRatio||1,scene3D.ultimate?2:1.25));renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()};new ResizeObserver(resize).observe(el);resize();scene3D.ready=true;
+ const geo=new THREE.BufferGeometry(),pos=[];for(let i=0;i<320;i++)pos.push(rand(-19,19),rand(2,17),rand(-23,15));geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));scene3D.stars=new THREE.Points(geo,new THREE.PointsMaterial({color:0x9adfff,size:.09,transparent:true,opacity:.85}));scene.add(scene3D.stars);
+ const dustGeo=new THREE.BufferGeometry(),dustPos=[];for(let i=0;i<1800;i++)dustPos.push(rand(-24,24),rand(-.5,15),rand(-30,22));dustGeo.setAttribute('position',new THREE.Float32BufferAttribute(dustPos,3));scene3D.dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0x6aaeff,size:.04,transparent:true,opacity:.42,sizeAttenuation:true}));scene.add(scene3D.dust);scene3D.dust.visible=false;
+ const aura=new THREE.Group();const auraMat=new THREE.MeshBasicMaterial({color:0x55eaff,transparent:true,opacity:.32,blending:THREE.AdditiveBlending,depthWrite:false});const auraRing=new THREE.Mesh(new THREE.TorusGeometry(1.55,.035,10,64),auraMat);auraRing.rotation.x=Math.PI/2;aura.add(auraRing);const auraRing2=new THREE.Mesh(new THREE.TorusGeometry(1.9,.018,8,64),new THREE.MeshBasicMaterial({color:0xb985ff,transparent:true,opacity:.2,blending:THREE.AdditiveBlending,depthWrite:false}));auraRing2.rotation.x=Math.PI/2;auraRing2.rotation.z=.35;aura.add(auraRing2);aura.position.y=-.42;aura.visible=false;scene3D.ship.add(aura);scene3D.ultimateAura=aura;
+ const auraLight=new THREE.PointLight(0x55dfff,0,9);auraLight.position.set(0,1.2,0);scene3D.ship.add(auraLight);scene3D.ultimateLight=auraLight;
+ const resize=()=>{const w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);renderer.setPixelRatio(Math.min(devicePixelRatio||1,scene3D.ultimate?1.6:1.25));renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()};new ResizeObserver(resize).observe(el);resize();scene3D.ready=true;
  }catch(e){console.warn('3D indisponible',e);$('threeScene').style.display='none';$('game').style.opacity='1'}}
 function setUltimateGraphics(on){
  scene3D.ultimate=!!on;
@@ -278,8 +280,8 @@ function setUltimateGraphics(on){
  const r=scene3D.renderer;r.setPixelRatio(Math.min(devicePixelRatio||1,scene3D.ultimate?2:1.25));
  r.shadowMap.enabled=scene3D.ultimate;r.shadowMap.type=THREE.PCFSoftShadowMap;
  r.toneMapping=scene3D.ultimate?THREE.ACESFilmicToneMapping:THREE.NoToneMapping;r.toneMappingExposure=scene3D.ultimate?1.16:1;
- scene3D.keyLight.castShadow=scene3D.ultimate;scene3D.keyLight.shadow.mapSize.set(1024,1024);
- scene3D.rimLight.intensity=scene3D.ultimate?58:42;scene3D.dust.visible=scene3D.ultimate;scene3D.floor.receiveShadow=scene3D.ultimate;
+ scene3D.keyLight.castShadow=scene3D.ultimate;scene3D.keyLight.shadow.mapSize.set(768,768);
+ scene3D.rimLight.intensity=scene3D.ultimate?62:42;scene3D.dust.visible=scene3D.ultimate;scene3D.ultimateAura.visible=scene3D.ultimate;scene3D.ultimateLight.intensity=scene3D.ultimate?18:0;scene3D.floor.receiveShadow=scene3D.ultimate;
  scene3D.world.traverse(o=>{if(o.isMesh){o.castShadow=scene3D.ultimate;o.receiveShadow=scene3D.ultimate}});
  const el=$('threeScene'),w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);r.setSize(w,h,false);
 }
@@ -321,13 +323,13 @@ function renderThree(){if(!scene3D.ready)return;const s=scene3D,world=s.world,wx
  if(!s.trailMeshes.length){const geo=new THREE.SphereGeometry(.12,8,6);for(let i=0;i<32;i++){const mat=new THREE.MeshBasicMaterial({color:0x55eaff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});const p=new THREE.Mesh(geo,mat);p.visible=false;p.userData.life=0;world.add(p);s.trailMeshes.push(p)}}
  if(player&&frame%2===0){const p=s.trailMeshes[s.trailCursor++%s.trailMeshes.length],col={vanguard:0x55eaff,phantom:0xb985ff,titan:0xffc36e}[saved.ship||'vanguard'];p.position.set(wx(player.x)+rand(-.12,.12),-.02,wz(player.y)+.72);p.scale.setScalar(rand(.55,1.25));p.material.color.setHex(col);p.material.opacity=.62;p.userData.life=1;p.visible=true}
  s.trailMeshes.forEach(p=>{if(p.userData.life>0){p.userData.life-=.035;p.material.opacity=Math.max(0,p.userData.life*.62);p.scale.multiplyScalar(1.018);if(p.userData.life<=0)p.visible=false}});
- s.world.traverse(o=>{if(o.userData.flame||o.userData.enemyFlame){const pulse=.78+Math.sin(frame*.32+(o.userData.phase||0))*.22;o.scale.y=pulse;if(o.material.emissiveIntensity!==undefined)o.material.emissiveIntensity=1.5+pulse}});s.stars.rotation.y=Math.sin(frame*.001)*.025;s.renderer.render(s.scene,s.camera)}
+ s.world.traverse(o=>{if(o.userData.flame||o.userData.enemyFlame){const pulse=.78+Math.sin(frame*.32+(o.userData.phase||0))*.22;o.scale.y=pulse;if(o.material.emissiveIntensity!==undefined)o.material.emissiveIntensity=1.5+pulse}});s.stars.rotation.y=Math.sin(frame*.001)*.025;if(s.ultimateAura){const pulse=.96+Math.sin(frame*.075)*.07;s.ultimateAura.scale.setScalar(pulse);s.ultimateAura.rotation.y=frame*.009;if(s.ultimateLight)s.ultimateLight.intensity=s.ultimate?16+Math.sin(frame*.12)*4:0}if(s.dust.visible)s.dust.rotation.y+=.00035;s.renderer.render(s.scene,s.camera)}
 initThree();
 setUltimateGraphics(false);
 $('ultimateGraphics').onclick=()=>setUltimateGraphics(!scene3D.ultimate);
 
 function finish(){ended=true;playing=false;saved.deaths++;saved.games++;saved.best=Math.max(saved.best,score);saved.board.push(score);saved.board.sort((a,b)=>b-a);saved.board=saved.board.slice(0,10);persist();updateHud();$('result').textContent='Score : '+score+' • Vague : '+wave+' • Cristaux : '+crystals;show('gameover')}
-function loop(t){const dt=Math.min(40,t-(last||t));last=t;update(dt);draw();renderThree();raf=requestAnimationFrame(loop)}raf=requestAnimationFrame(loop);
+function loop(t){const dt=Math.min(33.333,Math.max(0,t-(last||t)));last=t;update(dt);draw();renderThree();raf=requestAnimationFrame(loop)}raf=requestAnimationFrame(loop);
 function show(id){['menu','shop','profilePanel','gameover','fleetPanel','guidePanel'].forEach(k=>$(k).classList.toggle('hidden',k!==id));$('overlay').classList.remove('hidden')}
 function startGame(m='solo'){mode=m;reset();if(mode==='host'&&conn?.open)remoteTarget={x:W*.72,y:H*.78,tx:W*.72,ty:H*.78};$('overlay').classList.add('hidden')}
 function move(e){if(!playing||paused||!player)return;const r=canvas.getBoundingClientRect(),x=Math.max(24,Math.min(W-24,e.clientX-r.left)),y=Math.max(28,Math.min(H-28,e.clientY-r.top));if(mode==='guest'){if(conn?.open)conn.send({type:'move',x,y});return}player.tx=x;player.ty=y}
