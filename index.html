@@ -82,8 +82,11 @@ const step=Math.min(2,dt/16.67);
 if(player){player.x+=(player.tx-player.x)*Math.min(1,.22*step);player.y+=(player.ty-player.y)*Math.min(1,.22*step)}
 if(remoteTarget&&mode==='host'){remoteTarget.x+=(remoteTarget.tx-remoteTarget.x)*.22*step;remoteTarget.y+=(remoteTarget.ty-remoteTarget.y)*.22*step}
 spawnClock+=dt;shotClock+=dt;enemyClock+=dt;
-if(spawnClock>Math.max(320,1050-wave*24)){spawnClock=0;if(wave%5===0&&!bossSpawned)newEnemy(true);else if(wave%5!==0)newEnemy()}
-if(enemyClock>26000&&(!enemies.some(e=>e.boss))){enemyClock=0;wave++;bossSpawned=false;updateHud();if(wave%10===0)for(let i=0;i<5;i++)newEnemy(false)}
+// Limite les ennemis simultanés pour éviter que la scène 3D sature.
+const maxAlive=Math.min(4+Math.floor(wave/2),10);
+if(spawnClock>Math.max(520,1250-wave*18)&&enemies.length<maxAlive){spawnClock=0;if(wave%5===0&&!bossSpawned)newEnemy(true);else if(wave%5!==0)newEnemy()}
+// Une vague ne progresse qu'une fois les ennemis éliminés.
+if(enemyClock>26000&&enemies.length===0){enemyClock=0;spawnClock=0;wave++;bossSpawned=false;updateHud();if(wave%10===0)for(let i=0;i<3;i++)newEnemy(false)}
 if(shotClock>Math.max(115,310-upgrades.rate*35-(level-1)*3)){shotClock=0;playerFire()}
 lasers.forEach(l=>{l.y-=l.v*step;l.life-=step});lasers=lasers.filter(l=>l.life>0&&l.y>-20);
 enemies.forEach(e=>{
@@ -247,7 +250,7 @@ function renderThree(){if(!scene3D.ready)return;const s=scene3D,world=s.world,wx
  if(player){s.ship.visible=true;s.ship.position.set(wx(player.x),-.1,wz(player.y));s.ship.rotation.y=Math.sin(frame*.035)*.08}else s.ship.visible=false;
  const color={vanguard:0x5df4ff,phantom:0xbd82ff,titan:0xffc36e}[saved.ship||'vanguard'];s.ship.traverse(o=>{if(o.isMesh&&o.material.emissive)o.material.emissive.setHex(color)});
  s.guest.visible=!!guestShip;if(guestShip)s.guest.position.set(wx(guestShip.x),-.05,wz(guestShip.y));
- while(s.enemyMeshes.length>enemies.length){const o=s.enemyMeshes.pop();world.remove(o);o.geometry.dispose();o.material.dispose()}
+ while(s.enemyMeshes.length>enemies.length){const o=s.enemyMeshes.pop();world.remove(o);o.traverse(part=>{if(part.geometry)part.geometry.dispose();if(part.material){if(Array.isArray(part.material))part.material.forEach(m=>m.dispose());else part.material.dispose()}})}
  enemies.forEach((e,i)=>{let o=s.enemyMeshes[i];if(!o){o=makeEnemy3D(e);world.add(o);s.enemyMeshes[i]=o}o.visible=true;o.position.set(wx(e.x),e.boss?.15:0,wz(e.y));o.scale.setScalar(e.r*(e.boss?1.45:1)*.055);o.rotation.x=Math.sin(frame*.012+e.phase)*.12;o.rotation.y=frame*.012+e.phase});
  while(s.laserMeshes.length<lasers.length){const m=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,1,8),new THREE.MeshBasicMaterial({color:0x68faff}));world.add(m);s.laserMeshes.push(m)}
  lasers.forEach((l,i)=>{const m=s.laserMeshes[i];m.visible=l.life>0;m.position.set(wx(l.x),.15,wz(l.y));m.scale.set(1,Math.max(.4,l.v*.17),1);m.material.color.set(l.color||'#68faff')});s.laserMeshes.slice(lasers.length).forEach(m=>m.visible=false);
