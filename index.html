@@ -40,7 +40,7 @@ button:active{transform:scale(.97);filter:brightness(1.25)}button.primary{backgr
 <section class="panel hidden" id="shop"><h2>🛠️ HANGAR</h2><p>Équipe ton pilote avec les cristaux récupérés en combat.</p><div class="balance">RÉSERVE : <b id="shopBalance">0</b> ◆</div>
 <div class="shoprow"><div><b>🩹 Réparation</b><small>Restaure jusqu'à 35 PV</small></div><button data-buy="repair">45 ◆</button></div>
 <div class="shoprow"><div><b>💥 Bombe nova</b><small>Élimine les drones, blesse le boss</small></div><button data-buy="nova">90 ◆</button></div>
-<div class="shoprow"><div><b>🛸 Drone de soutien</b><small>Un canon allié supplémentaire</small></div><button data-buy="drone">150 ◆</button></div>
+<div class="shoprow"><div><b>🛸 Drone de soutien</b><small>Ajoute un canon au vaisseau (jusqu’à 3)</small></div><button data-buy="drone">150 ◆</button></div>
 <div class="shoprow"><div><b>⚡ Cadence laser</b><small>Tire plus rapidement (max. 5)</small></div><button data-buy="rate">100 ◆</button></div>
 <div class="shoprow"><div><b>🔷 Puissance laser</b><small>Plus de dégâts (max. 5)</small></div><button data-buy="power">125 ◆</button></div>
 <div class="shoprow"><div><b>🧲 Aimant</b><small>Attire les cristaux (max. 5)</small></div><button data-buy="magnet">100 ◆</button></div>
@@ -75,7 +75,7 @@ function reset(){frame=0;score=0;wave=1;hp=100;playing=true;paused=false;ended=f
 function newEnemy(isBoss=false){if(isBoss){bossSpawned=true;bossId++;const type=(Math.floor(wave/5)-1)%3;const base=115+wave*17;const max=Math.round(base*[1,1.16,1.32][type]*(mode==='host'&&remoteTarget?1.35:1));enemies.push({x:W/2,y:-60,v:1.1+wave*.012,r:34+type*5,hp:max,max,boss:true,type,phase:rand(0,6),shoot:0});return}
 const max=2+Math.floor(wave*.7);enemies.push({x:rand(25,W-25),y:-25,v:rand(1.1,2.1)+wave*.075,r:rand(12,19),hp:max,max,boss:false,phase:rand(0,6)})}
 function fire(x,y,color='#72f8ff',damage=1){lasers.push({x,y,v:9,damage,color,life:55})}
-function playerFire(){fire(player.x,player.y-23,'#72f8ff',1+upgrades.power);if(upgrades.drone){for(let i=0;i<upgrades.drone;i++){const offset=(i-(upgrades.drone-1)/2)*24;fire(player.x+offset,player.y-12,'#b68aff',1)}}if(mode==='host'&&remoteTarget)fire(remoteTarget.x,remoteTarget.y-22,'#ff79dd',1)}
+function playerFire(){fire(player.x,player.y-23,'#72f8ff',1+upgrades.power);const offsets=upgrades.drone===1?[-28]:upgrades.drone===2?[-28,28]:upgrades.drone>=3?[-34,0,34]:[];offsets.forEach(x=>fire(player.x+x,player.y-18,'#b68aff',1));if(mode==='host'&&remoteTarget)fire(remoteTarget.x,remoteTarget.y-22,'#ff79dd',1)}
 function update(dt){frame++;stars.forEach(s=>{s.y+=s.speed*dt;if(s.y>H){s.y=0;s.x=rand(0,W)}});if(!playing||paused)return;
 if(mode==='guest'){if(netSnapshot){applyState(netSnapshot);if(hp<=0&&!ended)finish()}return}
 const step=Math.min(2,dt/16.67);
@@ -261,6 +261,21 @@ function setUltimateGraphics(on){
 function renderThree(){if(!scene3D.ready)return;const s=scene3D,world=s.world,wx=x=>(x/W-.5)*23,wz=y=>(y/H-.5)*27;
  if(player){s.ship.visible=true;s.ship.position.set(wx(player.x),-.1,wz(player.y));s.ship.rotation.y=Math.sin(frame*.035)*.08}else s.ship.visible=false;
  const color={vanguard:0x5df4ff,phantom:0xbd82ff,titan:0xffc36e}[saved.ship||'vanguard'];s.ship.traverse(o=>{if(o.isMesh&&o.material.emissive)o.material.emissive.setHex(color)});
+ // Les achats de drones ajoutent de vrais canons visibles sur la coque.
+ const cannonOffsets=upgrades.drone===1?[-1.15]:upgrades.drone===2?[-1.15,1.15]:upgrades.drone>=3?[-1.35,0,1.35]:[];
+ if(!s.ship.userData.supportCannons)s.ship.userData.supportCannons=[];
+ while(s.ship.userData.supportCannons.length<cannonOffsets.length){
+  const pod=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.BoxGeometry(.34,.2,.72),new THREE.MeshStandardMaterial({color:0x263c58,metalness:.85,roughness:.28}));
+  const barrel=new THREE.Mesh(new THREE.CylinderGeometry(.075,.11,.78,10),new THREE.MeshStandardMaterial({color:0x15283f,metalness:.8,roughness:.25}));
+  barrel.rotation.x=Math.PI/2;barrel.position.z=-.48;pod.add(body,barrel);
+  const muzzle=new THREE.Mesh(new THREE.TorusGeometry(.105,.035,8,16),new THREE.MeshBasicMaterial({color:color}));
+  muzzle.rotation.x=Math.PI/2;muzzle.position.z=-.87;pod.add(muzzle);
+  const glow=new THREE.Mesh(new THREE.BoxGeometry(.19,.035,.42),new THREE.MeshBasicMaterial({color:color}));
+  glow.position.set(0,.12,.02);pod.add(glow);s.ship.add(pod);s.ship.userData.supportCannons.push(pod);
+ }
+ s.ship.userData.supportCannons.forEach((pod,i)=>{pod.visible=i<cannonOffsets.length;if(pod.visible)pod.position.set(cannonOffsets[i],-.03,-.62)});
+
  s.guest.visible=!!guestShip;if(guestShip)s.guest.position.set(wx(guestShip.x),-.05,wz(guestShip.y));
  while(s.enemyMeshes.length>enemies.length){const o=s.enemyMeshes.pop();world.remove(o);o.traverse(part=>{if(part.geometry)part.geometry.dispose();if(part.material){if(Array.isArray(part.material))part.material.forEach(m=>m.dispose());else part.material.dispose()}})}
  enemies.forEach((e,i)=>{let o=s.enemyMeshes[i];if(!o){o=makeEnemy3D(e);world.add(o);s.enemyMeshes[i]=o}o.visible=true;o.position.set(wx(e.x),e.boss?.15:0,wz(e.y));o.scale.setScalar(e.r*(e.boss?1.45:1)*.055);o.rotation.x=Math.sin(frame*.012+e.phase)*.12;o.rotation.y=frame*.012+e.phase});
