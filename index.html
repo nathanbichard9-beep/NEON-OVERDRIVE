@@ -77,7 +77,7 @@ const max=2+Math.floor(wave*.7);enemies.push({x:rand(25,W-25),y:-25,v:rand(1.1,2
 function fire(x,y,color='#72f8ff',damage=1){lasers.push({x,y,v:9,damage,color,life:55})}
 function playerFire(){fire(player.x,player.y-23,'#72f8ff',1+upgrades.power);if(upgrades.drone){for(let i=0;i<upgrades.drone;i++){const offset=(i-(upgrades.drone-1)/2)*24;fire(player.x+offset,player.y-12,'#b68aff',1)}}if(mode==='host'&&remoteTarget)fire(remoteTarget.x,remoteTarget.y-22,'#ff79dd',1)}
 function update(dt){frame++;stars.forEach(s=>{s.y+=s.speed*dt;if(s.y>H){s.y=0;s.x=rand(0,W)}});if(!playing||paused)return;
-if(mode==='guest'){if(netSnapshot)applyState(netSnapshot);return}
+if(mode==='guest'){if(netSnapshot){applyState(netSnapshot);if(hp<=0&&!ended)finish()}return}
 const step=Math.min(2,dt/16.67);
 if(player){player.x+=(player.tx-player.x)*Math.min(1,.22*step);player.y+=(player.ty-player.y)*Math.min(1,.22*step)}
 if(remoteTarget&&mode==='host'){remoteTarget.x+=(remoteTarget.tx-remoteTarget.x)*.22*step;remoteTarget.y+=(remoteTarget.ty-remoteTarget.y)*.22*step}
@@ -105,7 +105,7 @@ enemies.forEach(e=>{
  e.x=Math.max(e.r,Math.min(W-e.r,e.x));
  if(dist<e.r+17){e.contact=(e.contact||0)+dt;if(e.contact>850){hp-=e.boss?14:5;e.contact=0;shake=e.boss?8:4;burst(e.x,e.y,e.boss?'#ff62d4':'#ad75ff',8)}}else e.contact=0;
 });
-for(const e of enemies){for(const l of lasers){if(l.life>0&&Math.hypot(e.x-l.x,e.y-l.y)<e.r+5){l.life=0;e.hp-=l.damage;burst(l.x,l.y,l.color,3);if(e.hp<=0){score+=e.boss?600:25;crystals+=e.boss?12:2;addXP(e.boss?50:10);if(e.boss){saved.wins++;persist();updateHud()}if(Math.random()<.12&&!e.boss)drops.push({x:e.x,y:e.y,vx:0,vy:0});burst(e.x,e.y,e.boss?'#ff70db':'#8b76ff',e.boss?35:12);soundEffect(e.boss?680:310,e.boss?.28:.08,e.boss?'sawtooth':'triangle');shake=e.boss?12:3}}}}
+for(const e of enemies){for(const l of lasers){if(e.hp>0&&l.life>0&&Math.hypot(e.x-l.x,e.y-l.y)<e.r+5){l.life=0;e.hp-=l.damage;burst(l.x,l.y,l.color,3);if(e.hp<=0){score+=e.boss?600:25;crystals+=e.boss?12:2;addXP(e.boss?50:10);if(e.boss){saved.wins++;persist();updateHud()}if(Math.random()<.12&&!e.boss)drops.push({x:e.x,y:e.y,vx:0,vy:0});burst(e.x,e.y,e.boss?'#ff70db':'#8b76ff',e.boss?35:12);soundEffect(e.boss?680:310,e.boss?.28:.08,e.boss?'sawtooth':'triangle');shake=e.boss?12:3}}}}
 enemies.forEach(e=>{if(e.y>H+100||e.y< -H)e.hp=0});
 enemies=enemies.filter(e=>e.hp>0);
 drops.forEach(g=>{const dx=player.x-g.x,dy=player.y-g.y,d=Math.hypot(dx,dy)||1;g.vx+=dx/d*(.13+upgrades.magnet*.08)*step;g.vy+=dy/d*(.13+upgrades.magnet*.08)*step;g.x+=g.vx*step;g.y+=g.vy*step;if(d<20){g.dead=true;crystals+=5;persist();burst(g.x,g.y,'#6ffaff',8)}});drops=drops.filter(g=>!g.dead&&g.y<H+30);
