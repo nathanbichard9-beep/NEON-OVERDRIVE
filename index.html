@@ -49,7 +49,7 @@ button:active{transform:scale(.97);filter:brightness(1.25)}button.primary{backgr
 <section class="panel hidden" id="guidePanel"><div class="kicker">MANUEL DU PILOTE • NEON OVERDRIVE</div><h2>❔ COMMANDES & BOUTONS</h2><div class="guideitem"><b>🚀 LANCER UNE PARTIE</b><p>Démarre une nouvelle mission en solo. Ton score et ta progression sont enregistrés sur cet appareil.</p></div><div class="guideitem"><b>🌐 CRÉER UNE PARTIE</b><p>Ouvre un salon multijoueur et affiche un code à 6 chiffres à partager.</p></div><div class="guideitem"><b>🔗 REJOINDRE UN CODE</b><p>Saisis le code du salon de l’autre pilote pour tenter de rejoindre sa partie.</p></div><div class="guideitem"><b>🏆 PROFIL & SCORES</b><p>Affiche tes parties, tes défaites, tes boss vaincus et ton meilleur score local.</p></div><div class="guideitem"><b>🛠️ HANGAR</b><p>Utilise les cristaux pour réparer la coque, déclencher une nova ou acheter des améliorations de combat.</p></div><div class="guideitem"><b>🚀 FLOTTES & VAISSEAUX</b><p>Consulte les trois appareils et équipe leur apparence.</p></div><div class="guideitem"><b>♫ MUSIQUE</b><p>Active ou coupe la musique électro. Il faut appuyer une première fois pour autoriser le son du navigateur.</p></div><div class="guideitem"><b>Ⅱ PAUSE / ▶ REPRENDRE</b><p>Met la mission en pause ou reprend exactement où tu en étais.</p></div><div class="guideitem"><b>✦ HANGAR EN MISSION</b><p>Ouvre les améliorations et met la partie en pause pendant que tu choisis.</p></div><div class="guideitem"><b>🎮 DÉPLACEMENT & TIR</b><p>Sur téléphone : touche puis fais glisser ton doigt dans l’arène. Sur ordinateur : déplace la souris dans l’arène. Les lasers tirent automatiquement, tu n’as pas besoin d’appuyer sur une touche de tir.</p></div><div class="actions"><button class="primary" id="guideBack">J'AI COMPRIS</button></div></section>
 <section class="panel hidden" id="profilePanel"><h2>PROFIL DE PILOTE</h2><p>Statistiques conservées sur cet appareil.</p><div class="grid2"><div class="statbox">Boss vaincus<b id="wins">0</b></div><div class="statbox">Défaites<b id="deaths">0</b></div><div class="statbox">Parties jouées<b id="games">0</b></div><div class="statbox">Meilleur score<b id="best">0</b></div></div><h3 style="color:var(--violet);font-size:13px">CLASSEMENT LOCAL</h3><ol id="ranking"></ol><button class="primary" id="profileBack">RETOUR</button></section>
 <section class="panel hidden" id="gameover"><h2>MISSION TERMINÉE</h2><p id="result"></p><div class="actions"><button class="primary" id="retry">↻ REJOUER</button><button id="gameMenu">MENU PRINCIPAL</button></div></section></div></main>
-<div id="controls"><button id="music">♫ MUSIQUE : OFF</button><button id="pause">Ⅱ PAUSE</button><button id="hangar">✦ HANGAR</button><span class="pill" id="record">🏆 0 • 💀 0</span></div></div>
+<div id="controls"><button id="music">♫ MUSIQUE : OFF</button><button id="pause">Ⅱ PAUSE</button><button id="hangar">✦ HANGAR</button><button id="ultimateGraphics">✧ MODE ULTIME : OFF</button><span class="pill" id="record">🏆 0 • 💀 0</span></div></div>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script><script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
 (()=>{'use strict';
@@ -145,7 +145,7 @@ if(player)drawShip(player.x,player.y,({vanguard:'#64f6ff',phantom:'#bd82ff',tita
 const boss=enemies.find(e=>e.boss);$('bossbar').style.display=boss?'block':'none';if(boss)$('bossfill').style.width=(100*Math.max(0,boss.hp/boss.max))+'%';
 }
 
-const scene3D={ready:false,renderer:null,scene:null,camera:null,world:null,ship:null,guest:null,enemyMeshes:[],laserMeshes:[],stars:null};
+const scene3D={ready:false,renderer:null,scene:null,camera:null,world:null,ship:null,guest:null,enemyMeshes:[],laserMeshes:[],stars:null,dust:null,ultimate:false,keyLight:null,rimLight:null,floor:null};
 function makeShip3D(color,kind='vanguard'){
  const g=new THREE.Group();
  const metal=new THREE.MeshStandardMaterial({color,metalness:.78,roughness:.25,emissive:color,emissiveIntensity:.24});
@@ -179,6 +179,14 @@ function makeShip3D(color,kind='vanguard'){
  add(new THREE.SphereGeometry(.12,12,8),glow,0,.47,.72);
  if(heavy){for(const side of [-1,1]){add(new THREE.BoxGeometry(.5,.3,1.2),edge,side*.48,-.19,.25);add(new THREE.BoxGeometry(.2,.2,.62),glow,side*1.42,.08,-.28)}add(new THREE.BoxGeometry(.9,.2,.55),metal,0,-.18,.9)}
  else if(stealth){for(const side of [-1,1]){const blade=add(new THREE.BoxGeometry(.12,.48,1.15),edge,side*.55,.2,.55);blade.rotation.z=side*.28}add(new THREE.BoxGeometry(.55,.06,.7),glow,0,.29,.48)}
+ // Fine hull plating, panel seams, vents and navigation lamps.
+ for(const side of [-1,1]){
+  const panel=new THREE.Mesh(new THREE.BoxGeometry(heavy?.72:.58,.035,.72),edge);panel.position.set(side*(heavy?.92:.76),.09,-.05);panel.rotation.z=side*.12;g.add(panel);
+  for(let n=0;n<4;n++){const vent=new THREE.Mesh(new THREE.BoxGeometry(.24,.025,.055),dark);vent.position.set(side*(heavy?.82:.68),.105,.32+n*.13);g.add(vent)}
+  const nav=new THREE.Mesh(new THREE.SphereGeometry(.055,10,8),glow);nav.position.set(side*(heavy?1.86:1.58),.16,.25);g.add(nav);
+  const rivet=new THREE.Mesh(new THREE.SphereGeometry(.035,8,6),glow);rivet.position.set(side*.24,.18,-1.18);g.add(rivet);
+ }
+ for(let n=0;n<5;n++){const seam=new THREE.Mesh(new THREE.BoxGeometry(.035,.025,.34),dark);seam.position.set((n-2)*.13,.19,.55);g.add(seam)}
  g.userData.kind=kind;g.userData.baseColor=color;return g;
 }
 function makeEnemy3D(e){
@@ -199,19 +207,42 @@ function makeEnemy3D(e){
  if(boss){for(let n=0;n<3;n++){const ring=add(new THREE.TorusGeometry(.9+n*.18,.035,8,32),trim,0,0,0,1,1,1);ring.rotation.x=n*.65;ring.rotation.y=n*.7}
   add(new THREE.BoxGeometry(1.5,.18,.35),trim,0,.68,.2);
  }else{const crest=add(new THREE.ConeGeometry(.28,.72,6),trim,0,.62,-.2);crest.rotation.x=-.25}
+ // Layered armor plates, sensor stalks and segmented glowing markings.
+ for(const side of [-1,1]){
+  const plate=new THREE.Mesh(new THREE.BoxGeometry(boss?.58:.38,.12,boss?.72:.5),armor);plate.position.set(side*(boss?.72:.5),.36,.18);plate.rotation.z=side*.22;g.add(plate);
+  const sensor=new THREE.Mesh(new THREE.SphereGeometry(.075,12,8),core);sensor.position.set(side*.22,.36,-.58);g.add(sensor);
+  for(let n=0;n<3;n++){const stripe=new THREE.Mesh(new THREE.BoxGeometry(.055,.045,.34),trim);stripe.position.set(side*(boss?1.2:.82),.12,-.38+n*.2);g.add(stripe)}
+ }
+ if(boss){const crown=new THREE.Mesh(new THREE.TorusGeometry(.48,.07,10,28),trim);crown.position.y=.58;crown.rotation.x=Math.PI/2;g.add(crown);
+  for(let n=0;n<6;n++){const spike=new THREE.Mesh(new THREE.ConeGeometry(.12,.48,6),armor);const ang=n*Math.PI/3;spike.position.set(Math.cos(ang)*.92,.12,Math.sin(ang)*.92);spike.rotation.z=Math.cos(ang)*.7;g.add(spike)}
+ }else{for(let n=0;n<4;n++){const vent=new THREE.Mesh(new THREE.BoxGeometry(.12,.04,.22),trim);vent.position.set((n-1.5)*.16,-.32,.58);g.add(vent)}}
  g.userData.boss=boss;g.userData.phase=e.phase;return g;
 }
 function initThree(){try{
- if(!window.THREE)throw Error('Three.js non chargé');const el=$('threeScene'),renderer=new THREE.WebGLRenderer({canvas:el,alpha:false,antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setClearColor(0x030817,1);renderer.outputColorSpace=THREE.SRGBColorSpace;scene3D.renderer=renderer;
+ if(!window.THREE)throw Error('Three.js non chargé');const el=$('threeScene'),renderer=new THREE.WebGLRenderer({canvas:el,alpha:false,antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.25));renderer.setClearColor(0x030817,1);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;scene3D.renderer=renderer;
  const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x030817,.018);scene3D.scene=scene;
  const camera=new THREE.PerspectiveCamera(48,1,.1,120);camera.position.set(0,20,25);camera.lookAt(0,0,0);scene3D.camera=camera;
- scene.add(new THREE.HemisphereLight(0x9bdfff,0x10132f,2));const key=new THREE.PointLight(0x38cfff,55,55);key.position.set(-5,10,3);scene.add(key);const rim=new THREE.PointLight(0xb14cff,42,45);rim.position.set(6,8,-8);scene.add(rim);
- const floor=new THREE.Mesh(new THREE.PlaneGeometry(40,48),new THREE.MeshStandardMaterial({color:0x071329,metalness:.45,roughness:.75,emissive:0x07152b,emissiveIntensity:.6}));floor.rotation.x=-Math.PI/2;floor.position.y=-1.3;scene.add(floor);
+ scene.add(new THREE.HemisphereLight(0x9bdfff,0x10132f,2));const key=new THREE.PointLight(0x38cfff,55,55);key.position.set(-5,10,3);scene.add(key);scene3D.keyLight=key;const rim=new THREE.PointLight(0xb14cff,42,45);rim.position.set(6,8,-8);scene.add(rim);scene3D.rimLight=rim;
+ const floor=new THREE.Mesh(new THREE.PlaneGeometry(40,48,32,32),new THREE.MeshStandardMaterial({color:0x071329,metalness:.45,roughness:.75,emissive:0x07152b,emissiveIntensity:.6}));floor.rotation.x=-Math.PI/2;floor.position.y=-1.3;scene.add(floor);scene3D.floor=floor;
  const grid=new THREE.GridHelper(40,40,0x1c8cb2,0x183052);grid.position.y=-1.27;grid.material.transparent=true;grid.material.opacity=.32;scene.add(grid);
  scene3D.world=new THREE.Group();scene.add(scene3D.world);scene3D.ship=makeShip3D(0x5df4ff,saved.ship||'vanguard');scene3D.world.add(scene3D.ship);scene3D.guest=makeShip3D(0xff70d9,'phantom');scene3D.world.add(scene3D.guest);scene3D.guest.visible=false;
  const geo=new THREE.BufferGeometry(),pos=[];for(let i=0;i<260;i++)pos.push(rand(-19,19),rand(2,17),rand(-23,15));geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));scene3D.stars=new THREE.Points(geo,new THREE.PointsMaterial({color:0x9adfff,size:.09,transparent:true,opacity:.85}));scene.add(scene3D.stars);
- const resize=()=>{const w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()};new ResizeObserver(resize).observe(el);resize();scene3D.ready=true;
+ const dustGeo=new THREE.BufferGeometry(),dustPos=[];for(let i=0;i<1500;i++)dustPos.push(rand(-24,24),rand(-.5,15),rand(-30,22));dustGeo.setAttribute('position',new THREE.Float32BufferAttribute(dustPos,3));scene3D.dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0x6aaeff,size:.035,transparent:true,opacity:.35,sizeAttenuation:true}));scene.add(scene3D.dust);
+ const resize=()=>{const w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);renderer.setPixelRatio(Math.min(devicePixelRatio||1,scene3D.ultimate?2:1.25));renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()};new ResizeObserver(resize).observe(el);resize();scene3D.ready=true;
  }catch(e){console.warn('3D indisponible',e);$('threeScene').style.display='none';$('game').style.opacity='1'}}
+function setUltimateGraphics(on){
+ scene3D.ultimate=!!on;
+ const b=$('ultimateGraphics');b.textContent=scene3D.ultimate?'✦ MODE ULTIME : ON':'✧ MODE ULTIME : OFF';b.setAttribute('aria-pressed',String(scene3D.ultimate));
+ b.style.borderColor=scene3D.ultimate?'#ffd77a':'#4ddfff88';b.style.boxShadow=scene3D.ultimate?'0 0 18px #ffcf5c66':'0 0 12px #00cfff19';
+ if(!scene3D.ready)return;
+ const r=scene3D.renderer;r.setPixelRatio(Math.min(devicePixelRatio||1,scene3D.ultimate?2:1.25));
+ r.shadowMap.enabled=scene3D.ultimate;r.shadowMap.type=THREE.PCFSoftShadowMap;
+ r.toneMapping=scene3D.ultimate?THREE.ACESFilmicToneMapping:THREE.NoToneMapping;r.toneMappingExposure=scene3D.ultimate?1.16:1;
+ scene3D.keyLight.castShadow=scene3D.ultimate;scene3D.keyLight.shadow.mapSize.set(1024,1024);
+ scene3D.rimLight.intensity=scene3D.ultimate?58:42;scene3D.dust.visible=scene3D.ultimate;scene3D.floor.receiveShadow=scene3D.ultimate;
+ scene3D.world.traverse(o=>{if(o.isMesh){o.castShadow=scene3D.ultimate;o.receiveShadow=scene3D.ultimate}});
+ const el=$('threeScene'),w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);r.setSize(w,h,false);
+}
 function renderThree(){if(!scene3D.ready)return;const s=scene3D,world=s.world,wx=x=>(x/W-.5)*23,wz=y=>(y/H-.5)*27;
  if(player){s.ship.visible=true;s.ship.position.set(wx(player.x),-.1,wz(player.y));s.ship.rotation.y=Math.sin(frame*.035)*.08}else s.ship.visible=false;
  const color={vanguard:0x5df4ff,phantom:0xbd82ff,titan:0xffc36e}[saved.ship||'vanguard'];s.ship.traverse(o=>{if(o.isMesh&&o.material.emissive)o.material.emissive.setHex(color)});
@@ -222,6 +253,7 @@ function renderThree(){if(!scene3D.ready)return;const s=scene3D,world=s.world,wx
  lasers.forEach((l,i)=>{const m=s.laserMeshes[i];m.visible=l.life>0;m.position.set(wx(l.x),.15,wz(l.y));m.scale.set(1,Math.max(.4,l.v*.17),1);m.material.color.set(l.color||'#68faff')});s.laserMeshes.slice(lasers.length).forEach(m=>m.visible=false);
  s.world.traverse(o=>{if(o.userData.flame){const pulse=.78+Math.sin(frame*.32+o.userData.phase)*.22;o.scale.y=pulse;o.material.emissiveIntensity=1.5+pulse}});s.stars.rotation.y=Math.sin(frame*.001)*.025;s.renderer.render(s.scene,s.camera)}
 initThree();
+$('ultimateGraphics').onclick=()=>setUltimateGraphics(!scene3D.ultimate);
 
 function finish(){ended=true;playing=false;saved.deaths++;saved.games++;saved.best=Math.max(saved.best,score);saved.board.push(score);saved.board.sort((a,b)=>b-a);saved.board=saved.board.slice(0,10);persist();updateHud();$('result').textContent='Score : '+score+' • Vague : '+wave+' • Cristaux : '+crystals;show('gameover')}
 function loop(t){const dt=Math.min(40,t-(last||t));last=t;update(dt);draw();renderThree();raf=requestAnimationFrame(loop)}raf=requestAnimationFrame(loop);
