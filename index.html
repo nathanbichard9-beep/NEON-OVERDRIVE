@@ -63,7 +63,7 @@ if(!saved){let legacy={};try{legacy=JSON.parse(localStorage.getItem('neonOverdri
 saved={...fresh(),...saved,board:Array.isArray(saved.board)?saved.board:[]};
 let crystals=Math.max(0,saved.crystals),level=Math.max(1,saved.level),xp=Math.max(0,saved.xp);
 const persist=()=>{saved.crystals=crystals;saved.level=level;saved.xp=xp;try{localStorage.setItem('neonOverdriveV2',JSON.stringify(saved))}catch{}};
-let upgrades={rate:0,power:0,magnet:0,drone:0},player=null,guestShip=null,lasers=[],enemies=[],allies=[],allySpawnClock=0,particles=[],drops=[],stars=[],shootingStars=[],shootingStarClock=0,score=0,wave=1,hp=100,playing=false,paused=false,ended=false,spawnClock=0,shotClock=0,enemyClock=0,bossSpawned=false,bossId=0,shake=0;
+let upgrades={rate:0,power:0,magnet:0,drone:0},player=null,guestShip=null,lasers=[],hostileShots=[],enemies=[],allies=[],allySpawnClock=0,particles=[],drops=[],stars=[],shootingStars=[],shootingStarClock=0,score=0,wave=1,hp=100,playing=false,paused=false,ended=false,spawnClock=0,shotClock=0,enemyClock=0,bossSpawned=false,bossId=0,shake=0;
 let peer=null,conn=null,mode='solo',remoteTarget=null,netSnapshot=null,lastSync=0,connecting=false;
 let audio=null,musicGain=null,musicOn=false;
 function updateHud(){ $('crystals').textContent=crystals;$('score').textContent=score;$('wave').textContent=wave;$('level').textContent=level;$('hp').textContent=Math.max(0,Math.ceil(hp));$('sector').textContent=wave%5===0?'⚠ SECTEUR BOSS':'SECTEUR '+String(wave).padStart(2,'0');$('record').textContent='🏆 '+saved.wins+' • 💀 '+saved.deaths}
@@ -71,7 +71,7 @@ function needed(l){return 100+(l-1)*75+(l-1)*(l-1)*25}
 function addXP(n){xp+=n;while(xp>=needed(level)){xp-=needed(level);level++}persist();updateHud()}
 function rand(a,b){return a+Math.random()*(b-a)}
 function burst(x,y,color,count=12){for(let i=0;i<count;i++){const a=rand(0,Math.PI*2),v=rand(1,4);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rand(15,32),max:32,color,size:rand(1,3)})}}
-function reset(){frame=0;score=0;wave=1;hp=100;playing=true;paused=false;ended=false;bossSpawned=false;player={x:W/2,y:H*.78,tx:W/2,ty:H*.78};guestShip=null;remoteTarget=null;lasers=[];enemies=[];allies=[];allySpawnClock=rand(9000,16000);particles=[];drops=[];upgrades={rate:0,power:0,magnet:0,drone:0};spawnClock=0;shotClock=0;enemyClock=0;shake=0;stars=Array.from({length:110},()=>({x:rand(0,W),y:rand(0,H),speed:rand(.35,1.8),size:rand(.5,2)}));updateHud()}
+function reset(){frame=0;score=0;wave=1;hp=100;playing=true;paused=false;ended=false;bossSpawned=false;player={x:W/2,y:H*.78,tx:W/2,ty:H*.78};guestShip=null;remoteTarget=null;lasers=[];hostileShots=[];enemies=[];allies=[];allySpawnClock=rand(9000,16000);particles=[];drops=[];upgrades={rate:0,power:0,magnet:0,drone:0};spawnClock=0;shotClock=0;enemyClock=0;shake=0;stars=Array.from({length:110},()=>({x:rand(0,W),y:rand(0,H),speed:rand(.35,1.8),size:rand(.5,2)}));updateHud()}
 function newEnemy(isBoss=false){if(isBoss){bossSpawned=true;bossId++;const type=(Math.floor(wave/5)-1)%3;const base=115+wave*17;const max=Math.round(base*[1,1.16,1.32][type]*(mode==='host'&&remoteTarget?1.35:1));enemies.push({x:W/2,y:-60,v:1.1+wave*.012,r:34+type*5,hp:max,max,boss:true,type,phase:rand(0,6),shoot:0});return}
 const max=2+Math.floor(wave*.7);enemies.push({x:rand(25,W-25),y:-25,v:rand(1.1,2.1)+wave*.075,r:rand(12,19),hp:max,max,boss:false,phase:rand(0,6)})}
 function fire(x,y,color='#72f8ff',damage=1){lasers.push({x,y,v:9,damage,color,life:55})}
@@ -101,6 +101,7 @@ enemies.forEach(e=>{
   e.x+=((dx/dist)*.42+orbit)*e.v*step;
   e.y+=((dy/dist)*.5)*e.v*step;
   e.shoot+=dt;
+  if(e.shoot>Math.max(850,1550-wave*12)){e.shoot=0;const dx=player.x-e.x,dy=player.y-e.y,len=Math.hypot(dx,dy)||1,base=Math.atan2(dy,dx),speed=3.1+Math.min(wave,18)*.09;for(const spread of [-.2,0,.2]){const angle=base+spread;hostileShots.push({x:e.x,y:e.y+e.r*.45,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,life:190,damage:7,color:e.type===0?'#ff70d8':e.type===1?'#64eaff':'#ffc36e'})}}
  }else{
   const speed=e.v*(1+Math.min(wave,20)*.012);
   e.x+=(dx/dist)*speed*step+Math.sin(e.phase)*.18*step;
@@ -109,6 +110,8 @@ enemies.forEach(e=>{
  e.x=Math.max(e.r,Math.min(W-e.r,e.x));
  if(dist<e.r+17){e.contact=(e.contact||0)+dt;if(e.contact>850){hp-=e.boss?14:5;e.contact=0;shake=e.boss?8:4;burst(e.x,e.y,e.boss?'#ff62d4':'#ad75ff',8)}}else e.contact=0;
 });
+hostileShots.forEach(s=>{s.x+=s.vx*step;s.y+=s.vy*step;s.life-=step;if(player&&Math.hypot(s.x-player.x,s.y-player.y)<19){s.life=0;hp-=s.damage;shake=6;burst(s.x,s.y,s.color,7)}});
+hostileShots=hostileShots.filter(s=>s.life>0&&s.x>-30&&s.x<W+30&&s.y>-30&&s.y<H+30);
 for(const e of enemies){for(const l of lasers){if(e.hp>0&&l.life>0&&Math.hypot(e.x-l.x,e.y-l.y)<e.r+5){l.life=0;e.hp-=l.damage;burst(l.x,l.y,l.color,3);if(e.hp<=0){score+=e.boss?600:25;crystals+=e.boss?12:2;addXP(e.boss?50:10);if(e.boss){saved.wins++;persist();updateHud()}if(Math.random()<.12&&!e.boss)drops.push({x:e.x,y:e.y,vx:0,vy:0});burst(e.x,e.y,e.boss?'#ff70db':'#8b76ff',e.boss?35:12);soundEffect(e.boss?680:310,e.boss?.28:.08,e.boss?'sawtooth':'triangle');shake=e.boss?12:3}}}}
 enemies.forEach(e=>{if(e.y>H+100||e.y< -H)e.hp=0});
 enemies=enemies.filter(e=>e.hp>0);
@@ -120,8 +123,8 @@ if(hp<=0&&!ended)finish();
 if(mode==='host'&&conn?.open&&frame-lastSync>3){lastSync=frame;conn.send({type:'state',data:packState()})}
 updateHud();
 }
-function packState(){return {player,remoteTarget,lasers,enemies,allies,particles,drops,score,wave,hp,frame,crystals,level,xp,bossSpawned}}
-function applyState(s){if(!s)return;player=s.player;guestShip=s.remoteTarget;lasers=s.lasers||[];enemies=s.enemies||[];allies=s.allies||[];particles=s.particles||[];drops=s.drops||[];score=s.score;wave=s.wave;hp=s.hp;frame=s.frame;crystals=s.crystals;level=s.level;xp=s.xp;bossSpawned=s.bossSpawned;updateHud()}
+function packState(){return {player,remoteTarget,lasers,hostileShots,enemies,allies,particles,drops,score,wave,hp,frame,crystals,level,xp,bossSpawned}}
+function applyState(s){if(!s)return;player=s.player;guestShip=s.remoteTarget;lasers=s.lasers||[];hostileShots=s.hostileShots||[];enemies=s.enemies||[];allies=s.allies||[];particles=s.particles||[];drops=s.drops||[];score=s.score;wave=s.wave;hp=s.hp;frame=s.frame;crystals=s.crystals;level=s.level;xp=s.xp;bossSpawned=s.bossSpawned;updateHud()}
 function drawShip(x,y,color,scale=1){const ship=saved.ship||'vanguard';ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);ctx.globalCompositeOperation='lighter';ctx.shadowBlur=22;ctx.shadowColor=color;ctx.fillStyle=ship==='titan'?'#49301b':ship==='phantom'?'#281744':'#102b52';ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();if(ship==='phantom'){ctx.moveTo(0,-29);ctx.lineTo(8,-9);ctx.lineTo(20,8);ctx.lineTo(7,5);ctx.lineTo(4,20);ctx.lineTo(-4,20);ctx.lineTo(-7,5);ctx.lineTo(-20,8);ctx.lineTo(-8,-9)}else if(ship==='titan'){ctx.moveTo(0,-23);ctx.lineTo(19,-12);ctx.lineTo(27,12);ctx.lineTo(12,17);ctx.lineTo(8,23);ctx.lineTo(-8,23);ctx.lineTo(-12,17);ctx.lineTo(-27,12);ctx.lineTo(-19,-12)}else{ctx.moveTo(0,-25);ctx.lineTo(13,-5);ctx.lineTo(23,15);ctx.lineTo(8,10);ctx.lineTo(5,21);ctx.lineTo(-5,21);ctx.lineTo(-8,10);ctx.lineTo(-23,15);ctx.lineTo(-13,-5)}ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle='#e8ffff';ctx.beginPath();ctx.moveTo(0,-15);ctx.lineTo(ship==='titan'?7:5,6);ctx.lineTo(0,12);ctx.lineTo(ship==='titan'?-7:-5,6);ctx.fill();if(ship==='titan'){ctx.strokeStyle='#fff0c4';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(-19,-7);ctx.lineTo(-25,5);ctx.moveTo(19,-7);ctx.lineTo(25,5);ctx.stroke()}ctx.fillStyle=color;ctx.globalAlpha=.75;ctx.beginPath();ctx.ellipse(0,25,ship==='titan'?8:5,rand(7,13),0,0,Math.PI*2);ctx.fill();ctx.restore()}
 function drawEnemy(e){
  ctx.save();ctx.translate(e.x,e.y);ctx.rotate(Math.sin(e.phase)*.12);
@@ -157,7 +160,7 @@ if(player)drawShip(player.x,player.y,({vanguard:'#64f6ff',phantom:'#bd82ff',tita
 const boss=enemies.find(e=>e.boss);$('bossbar').style.display=boss?'block':'none';if(boss)$('bossfill').style.width=(100*Math.max(0,boss.hp/boss.max))+'%';
 }
 
-const scene3D={ready:false,renderer:null,scene:null,camera:null,world:null,ship:null,guest:null,enemyMeshes:[],allyMeshes:[],laserMeshes:[],trailMeshes:[],trailCursor:0,stars:null,dust:null,ultimate:false,keyLight:null,rimLight:null,floor:null};
+const scene3D={ready:false,renderer:null,scene:null,camera:null,world:null,ship:null,guest:null,enemyMeshes:[],allyMeshes:[],laserMeshes:[],hostileMeshes:[],trailMeshes:[],trailCursor:0,stars:null,dust:null,ultimate:false,keyLight:null,rimLight:null,floor:null};
 function makeShip3D(color,kind='vanguard'){
  const g=new THREE.Group();
  const metal=new THREE.MeshStandardMaterial({color,metalness:.78,roughness:.25,emissive:color,emissiveIntensity:.24});
@@ -311,6 +314,8 @@ function renderThree(){if(!scene3D.ready)return;const s=scene3D,world=s.world,wx
   const ring=new THREE.Mesh(new THREE.TorusGeometry(.105,.018,6,16),glowMat.clone());ring.position.z=.42;g.add(ring);
   g.userData={coreMat,glowMat,tipMat,ringMat:ring.material};world.add(g);s.laserMeshes.push(g)
  }
+ if(!s.hostileMeshes.length){for(let i=0;i<24;i++){const g=new THREE.Group(),mat=new THREE.MeshBasicMaterial({color:0xff70d8}),halo=new THREE.MeshBasicMaterial({color:0xff70d8,transparent:true,opacity:.38,blending:THREE.AdditiveBlending,depthWrite:false});const core=new THREE.Mesh(new THREE.SphereGeometry(.13,12,10),mat),ring=new THREE.Mesh(new THREE.TorusGeometry(.19,.035,7,16),halo);ring.rotation.x=Math.PI/2;g.add(core,ring);g.userData={mat,halo};world.add(g);s.hostileMeshes.push(g)}}
+ hostileShots.forEach((p,i)=>{const g=s.hostileMeshes[i];if(!g)return;g.visible=true;g.position.set(wx(p.x),.24,wz(p.y));g.rotation.y=frame*.08+i;g.userData.mat.color.set(p.color||'#ff70d8');g.userData.halo.color.set(p.color||'#ff70d8')});s.hostileMeshes.slice(hostileShots.length).forEach(g=>g.visible=false);
  lasers.forEach((l,i)=>{const g=s.laserMeshes[i],d=g.userData,color=l.color||'#68faff',pulse=.82+Math.sin(frame*.42+i)*.18;g.visible=l.life>0;g.position.set(wx(l.x),.32,wz(l.y));g.scale.set(1,1,Math.max(.65,l.v*.19));d.coreMat.color.set(color);d.glowMat.color.set(color);d.glowMat.opacity=.24+pulse*.16;d.tipMat.color.set('#ffffff');d.ringMat.color.set(color);g.rotation.y=Math.sin(frame*.12+i)*.025});s.laserMeshes.slice(lasers.length).forEach(g=>g.visible=false);
  // Reusable fading engine-trail pool, emitted behind the player's ship.
  if(!s.trailMeshes.length){const geo=new THREE.SphereGeometry(.12,8,6);for(let i=0;i<32;i++){const mat=new THREE.MeshBasicMaterial({color:0x55eaff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});const p=new THREE.Mesh(geo,mat);p.visible=false;p.userData.life=0;world.add(p);s.trailMeshes.push(p)}}
