@@ -160,7 +160,7 @@ if(player)drawShip(player.x,player.y,({vanguard:'#64f6ff',phantom:'#bd82ff',tita
 const boss=enemies.find(e=>e.boss);$('bossbar').style.display=boss?'block':'none';if(boss)$('bossfill').style.width=(100*Math.max(0,boss.hp/boss.max))+'%';
 }
 
-const scene3D={ready:false,renderer:null,scene:null,camera:null,world:null,ship:null,guest:null,enemyMeshes:[],allyMeshes:[],laserMeshes:[],hostileMeshes:[],trailMeshes:[],trailCursor:0,stars:null,dust:null,ultimate:false,ultimateAura:null,ultimateLight:null,keyLight:null,rimLight:null,floor:null};
+const scene3D={ready:false,renderer:null,scene:null,camera:null,world:null,ship:null,guest:null,enemyMeshes:[],allyMeshes:[],laserMeshes:[],hostileMeshes:[],trailMeshes:[],trailCursor:0,stars:null,dust:null,ultimate:false,ultimateAura:null,ultimateLight:null,keyLight:null,rimLight:null,floor:null,scenery:null,sceneryBits:[]};
 function makeShip3D(color,kind='vanguard'){
  const g=new THREE.Group();
  const metal=new THREE.MeshStandardMaterial({color,metalness:.78,roughness:.25,emissive:color,emissiveIntensity:.24});
@@ -282,6 +282,19 @@ function initThree(){try{
  scene.add(new THREE.HemisphereLight(0x9bdfff,0x10132f,2));const key=new THREE.PointLight(0x38cfff,55,55);key.position.set(-5,10,3);scene.add(key);scene3D.keyLight=key;const rim=new THREE.PointLight(0xb14cff,42,45);rim.position.set(6,8,-8);scene.add(rim);scene3D.rimLight=rim;
  const floor=new THREE.Mesh(new THREE.PlaneGeometry(40,48,32,32),new THREE.MeshStandardMaterial({color:0x071329,metalness:.45,roughness:.75,emissive:0x07152b,emissiveIntensity:.6}));floor.rotation.x=-Math.PI/2;floor.position.y=-1.3;scene.add(floor);scene3D.floor=floor;
  const grid=new THREE.GridHelper(40,40,0x1c8cb2,0x183052);grid.position.y=-1.27;grid.material.transparent=true;grid.material.opacity=.32;scene.add(grid);
+ scene3D.scenery=new THREE.Group();scene.add(scene3D.scenery);
+ // Décor spatial : planètes, anneaux, station orbitale et astéroïdes sur les côtés.
+ const planet=(x,y,z,r,color,glowColor)=>{
+  const g=new THREE.Group();const sphere=new THREE.Mesh(new THREE.SphereGeometry(r,32,24),new THREE.MeshStandardMaterial({color,roughness:.82,metalness:.12,emissive:color,emissiveIntensity:.12}));g.add(sphere);
+  const cloud=new THREE.Mesh(new THREE.SphereGeometry(r*1.025,24,18),new THREE.MeshBasicMaterial({color:glowColor,transparent:true,opacity:.12,side:THREE.BackSide}));g.add(cloud);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(r*1.42,.045,8,72),new THREE.MeshBasicMaterial({color:glowColor,transparent:true,opacity:.62}));ring.rotation.x=1.18;ring.rotation.y=.2;g.add(ring);g.position.set(x,y,z);scene3D.scenery.add(g);scene3D.sceneryBits.push({mesh:g,spin:.0008});
+ };
+ planet(-15,7,-16,3.1,0x263c78,0x55cfff);planet(16,5,-11,2.15,0x633b79,0xd58aff);
+ const station=new THREE.Group();const stationMat=new THREE.MeshStandardMaterial({color:0x334b68,metalness:.85,roughness:.35});const stationGlow=new THREE.MeshBasicMaterial({color:0x53eaff});
+ const core=new THREE.Mesh(new THREE.CylinderGeometry(.62,.8,2.7,12),stationMat);core.rotation.z=Math.PI/2;station.add(core);
+ for(let side of [-1,1]){const arm=new THREE.Mesh(new THREE.BoxGeometry(3.4,.13,.16),stationMat);arm.position.x=side*1.8;station.add(arm);const panel=new THREE.Mesh(new THREE.BoxGeometry(1.5,.07,.95),new THREE.MeshStandardMaterial({color:0x173a59,metalness:.55,roughness:.4,emissive:0x082a4b}));panel.position.set(side*2.15,.12,0);station.add(panel);const lamp=new THREE.Mesh(new THREE.SphereGeometry(.13,10,8),stationGlow);lamp.position.set(side*1.1,.42,0);station.add(lamp)}
+ const stationRing=new THREE.Mesh(new THREE.TorusGeometry(1.35,.055,8,48),stationGlow);stationRing.rotation.y=.7;station.add(stationRing);station.position.set(11,8,-20);station.rotation.set(.4,.2,-.25);scene3D.scenery.add(station);scene3D.sceneryBits.push({mesh:station,spin:.00035});
+ for(let i=0;i<22;i++){const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(rand(.22,.72),1),new THREE.MeshStandardMaterial({color:0x45516c,metalness:.38,roughness:.92,emissive:0x111b35,flatShading:true}));rock.position.set(rand(-19,19),rand(-.2,8),rand(-18,15));rock.rotation.set(rand(0,6),rand(0,6),rand(0,6));scene3D.scenery.add(rock);scene3D.sceneryBits.push({mesh:rock,spin:rand(.0005,.002)});}
  scene3D.world=new THREE.Group();scene.add(scene3D.world);scene3D.ship=makeShip3D(0x5df4ff,saved.ship||'vanguard');scene3D.world.add(scene3D.ship);scene3D.guest=makeShip3D(0xff70d9,'phantom');scene3D.world.add(scene3D.guest);scene3D.guest.visible=false;
  const geo=new THREE.BufferGeometry(),pos=[];for(let i=0;i<320;i++)pos.push(rand(-19,19),rand(2,17),rand(-23,15));geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));scene3D.stars=new THREE.Points(geo,new THREE.PointsMaterial({color:0x9adfff,size:.09,transparent:true,opacity:.85}));scene.add(scene3D.stars);
  const dustGeo=new THREE.BufferGeometry(),dustPos=[];for(let i=0;i<1800;i++)dustPos.push(rand(-24,24),rand(-.5,15),rand(-30,22));dustGeo.setAttribute('position',new THREE.Float32BufferAttribute(dustPos,3));scene3D.dust=new THREE.Points(dustGeo,new THREE.PointsMaterial({color:0x6aaeff,size:.04,transparent:true,opacity:.42,sizeAttenuation:true}));scene.add(scene3D.dust);scene3D.dust.visible=false;
@@ -303,6 +316,7 @@ function setUltimateGraphics(on){
  const el=$('threeScene'),w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);r.setSize(w,h,false);
 }
 function renderThree(){if(!scene3D.ready)return;const s=scene3D,world=s.world,wx=x=>(x/W-.5)*23,wz=y=>(y/H-.5)*27;
+ s.sceneryBits.forEach(b=>{b.mesh.rotation.y+=b.spin*16;b.mesh.rotation.z+=b.spin*3});
  if(player){s.ship.visible=true;s.ship.position.set(wx(player.x),-.1,wz(player.y));s.ship.rotation.y=0}else s.ship.visible=false;
  const color={vanguard:0x5df4ff,phantom:0xbd82ff,titan:0xffc36e}[saved.ship||'vanguard'];s.ship.traverse(o=>{if(o.isMesh&&o.material.emissive)o.material.emissive.setHex(color)});
  // Les achats de drones ajoutent de vrais canons visibles sur la coque.
