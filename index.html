@@ -252,8 +252,15 @@ function renderThree(){if(!scene3D.ready)return;const s=scene3D,world=s.world,wx
  s.guest.visible=!!guestShip;if(guestShip)s.guest.position.set(wx(guestShip.x),-.05,wz(guestShip.y));
  while(s.enemyMeshes.length>enemies.length){const o=s.enemyMeshes.pop();world.remove(o);o.traverse(part=>{if(part.geometry)part.geometry.dispose();if(part.material){if(Array.isArray(part.material))part.material.forEach(m=>m.dispose());else part.material.dispose()}})}
  enemies.forEach((e,i)=>{let o=s.enemyMeshes[i];if(!o){o=makeEnemy3D(e);world.add(o);s.enemyMeshes[i]=o}o.visible=true;o.position.set(wx(e.x),e.boss?.15:0,wz(e.y));o.scale.setScalar(e.r*(e.boss?1.45:1)*.055);o.rotation.x=Math.sin(frame*.012+e.phase)*.12;o.rotation.y=frame*.012+e.phase});
- while(s.laserMeshes.length<lasers.length){const m=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,1,8),new THREE.MeshBasicMaterial({color:0x68faff}));world.add(m);s.laserMeshes.push(m)}
- lasers.forEach((l,i)=>{const m=s.laserMeshes[i];m.visible=l.life>0;m.position.set(wx(l.x),.15,wz(l.y));m.scale.set(1,Math.max(.4,l.v*.17),1);m.material.color.set(l.color||'#68faff')});s.laserMeshes.slice(lasers.length).forEach(m=>m.visible=false);
+ while(s.laserMeshes.length<lasers.length){
+  const g=new THREE.Group(),coreMat=new THREE.MeshBasicMaterial({color:0xffffff}),glowMat=new THREE.MeshBasicMaterial({color:0x68faff,transparent:true,opacity:.34,blending:THREE.AdditiveBlending,depthWrite:false}),tipMat=new THREE.MeshBasicMaterial({color:0xffffff});
+  const core=new THREE.Mesh(new THREE.CylinderGeometry(.035,.055,1,10),coreMat);core.rotation.x=Math.PI/2;core.position.z=-.02;g.add(core);
+  const glow=new THREE.Mesh(new THREE.CylinderGeometry(.105,.13,1.12,10,1,true),glowMat);glow.rotation.x=Math.PI/2;glow.position.z=-.02;g.add(glow);
+  const tip=new THREE.Mesh(new THREE.SphereGeometry(.105,10,8),tipMat);tip.position.z=-.57;g.add(tip);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(.105,.018,6,16),glowMat.clone());ring.position.z=.42;g.add(ring);
+  g.userData={coreMat,glowMat,tipMat,ringMat:ring.material};world.add(g);s.laserMeshes.push(g)
+ }
+ lasers.forEach((l,i)=>{const g=s.laserMeshes[i],d=g.userData,color=l.color||'#68faff',pulse=.82+Math.sin(frame*.42+i)*.18;g.visible=l.life>0;g.position.set(wx(l.x),.32,wz(l.y));g.scale.set(1,1,Math.max(.65,l.v*.19));d.coreMat.color.set(color);d.glowMat.color.set(color);d.glowMat.opacity=.24+pulse*.16;d.tipMat.color.set('#ffffff');d.ringMat.color.set(color);g.rotation.y=Math.sin(frame*.12+i)*.025});s.laserMeshes.slice(lasers.length).forEach(g=>g.visible=false);
  s.world.traverse(o=>{if(o.userData.flame){const pulse=.78+Math.sin(frame*.32+o.userData.phase)*.22;o.scale.y=pulse;o.material.emissiveIntensity=1.5+pulse}});s.stars.rotation.y=Math.sin(frame*.001)*.025;s.renderer.render(s.scene,s.camera)}
 initThree();
 setUltimateGraphics(false);
