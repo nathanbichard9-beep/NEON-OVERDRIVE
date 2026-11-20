@@ -79,7 +79,7 @@ function playerFire(){fire(player.x,player.y-23,'#72f8ff',1+upgrades.power);cons
 function update(dt){frame++;stars.forEach(s=>{s.y+=s.speed*dt;if(s.y>H){s.y=0;s.x=rand(0,W)}});shootingStarClock+=dt;if(shootingStarClock>850){shootingStarClock=0;if(shootingStars.length<5&&Math.random()<.8)shootingStars.push({x:rand(W*.15,W*1.05),y:rand(-H*.25,H*.55),vx:-rand(.35,.75),vy:rand(.45,.9),life:rand(45,85),max:85,len:rand(45,100),width:rand(1,2.4)})}shootingStars.forEach(s=>{s.x+=s.vx*dt*.06;s.y+=s.vy*dt*.06;s.life-=dt*.055});shootingStars=shootingStars.filter(s=>s.life>0&&s.x>-120&&s.y<H+120);if(!playing||paused)return;
 if(mode==='guest'){if(netSnapshot){applyState(netSnapshot);if(hp<=0&&!ended)finish()}return}
 const step=Math.min(2,dt/16.67);
-const smooth=1-Math.pow(.78,step);
+const smooth=1-Math.exp(-dt/105);
 if(player){player.x+=(player.tx-player.x)*smooth;player.y+=(player.ty-player.y)*smooth;if(Math.abs(player.tx-player.x)<.05)player.x=player.tx;if(Math.abs(player.ty-player.y)<.05)player.y=player.ty}
 if(remoteTarget&&mode==='host'){remoteTarget.x+=(remoteTarget.tx-remoteTarget.x)*smooth;remoteTarget.y+=(remoteTarget.ty-remoteTarget.y)*smooth;if(Math.abs(remoteTarget.tx-remoteTarget.x)<.05)remoteTarget.x=remoteTarget.tx;if(Math.abs(remoteTarget.ty-remoteTarget.y)<.05)remoteTarget.y=remoteTarget.ty}
 spawnClock+=dt;shotClock+=dt;enemyClock+=dt;
