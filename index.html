@@ -119,10 +119,10 @@ enemies.forEach(e=>{
 });
 hostileShots.forEach(s=>{s.x+=s.vx*step;s.y+=s.vy*step;s.life-=step;if(player&&Math.hypot(s.x-player.x,s.y-player.y)<19){s.life=0;hp-=s.damage;shake=6;burst(s.x,s.y,s.color,7)}});
 hostileShots=hostileShots.filter(s=>s.life>0&&s.x>-30&&s.x<W+30&&s.y>-30&&s.y<H+30);
-for(const e of enemies){for(const l of lasers){if(e.hp>0&&l.life>0&&Math.hypot(e.x-l.x,e.y-l.y)<e.r+5){l.life=0;e.hp-=l.damage;burst(l.x,l.y,l.color,3);if(e.hp<=0){score+=e.boss?600:25;crystals+=e.boss?12:2;addXP(e.boss?50:10);if(e.boss){saved.wins++;persist();updateHud()}if(Math.random()<.12&&!e.boss)drops.push({x:e.x,y:e.y,vx:0,vy:0});burst(e.x,e.y,e.boss?'#ff70db':'#8b76ff',e.boss?35:12);soundEffect(e.boss?680:310,e.boss?.28:.08,e.boss?'sawtooth':'triangle');shake=e.boss?12:3}}}}
+for(const e of enemies){for(const l of lasers){if(e.hp>0&&l.life>0&&Math.hypot(e.x-l.x,e.y-l.y)<e.r+5){l.life=0;e.hp-=l.damage;burst(l.x,l.y,l.color,3);if(e.hp<=0){score+=e.boss?600:25;crystals+=e.boss?12:2;addXP(e.boss?50:10);if(e.boss){saved.wins++;persist();updateHud()}if(Math.random()<.01)drops.push({x:e.x,y:e.y,vx:0,vy:0});burst(e.x,e.y,e.boss?'#ff70db':'#8b76ff',e.boss?35:12);soundEffect(e.boss?680:310,e.boss?.28:.08,e.boss?'sawtooth':'triangle');shake=e.boss?12:3}}}}
 enemies.forEach(e=>{if(e.y>H+100||e.y< -H)e.hp=0});
 enemies=enemies.filter(e=>e.hp>0);
-drops.forEach(g=>{const dx=player.x-g.x,dy=player.y-g.y,d=Math.hypot(dx,dy)||1;g.vx+=dx/d*(.13+upgrades.magnet*.08)*step;g.vy+=dy/d*(.13+upgrades.magnet*.08)*step;g.x+=g.vx*step;g.y+=g.vy*step;if(d<20){g.dead=true;crystals+=5;persist();burst(g.x,g.y,'#6ffaff',8)}});drops=drops.filter(g=>!g.dead&&g.y<H+30);
+drops.forEach(g=>{const dx=player.x-g.x,dy=player.y-g.y,d=Math.hypot(dx,dy)||1;g.vx+=dx/d*(.13+upgrades.magnet*.08)*step;g.vy+=dy/d*(.13+upgrades.magnet*.08)*step;g.x+=g.vx*step;g.y+=g.vy*step;if(d<20){g.dead=true;crystals+=20;persist();burst(g.x,g.y,'#6ffaff',8)}});drops=drops.filter(g=>!g.dead&&g.y<H+30);
 particles.forEach(p=>{p.x+=p.vx*step;p.y+=p.vy*step;p.life-=step});particles=particles.filter(p=>p.life>0);
 if(frame%180===0&&hp<100)hp=Math.min(100,hp+1);
 if(shake>0)shake*=.8;
