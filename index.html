@@ -87,6 +87,8 @@ button.primary{background:linear-gradient(120deg,#087fae,#653cb4);border-color:#
 #menu .brand-underline i{height:1px;flex:1;background:linear-gradient(90deg,#64efff,transparent);box-shadow:0 0 7px #64efff}
 #menu .brand-underline i:last-child{background:linear-gradient(90deg,transparent,#c58aff)}
 @media(max-width:650px){#menu .brand-lockup{margin-bottom:13px}#menu .brand-emblem{width:31px;height:31px;margin-bottom:9px}#menu .brand-emblem span{font-size:19px}#menu .brand-lockup h1{font-size:clamp(37px,10vw,53px)}}
+
+#controls #musicVolume{min-width:52px;text-align:center;font-weight:1000;font-size:15px;letter-spacing:.5px;color:#8ff7ff;background:linear-gradient(110deg,#0b2940,#21133b);border:1px solid #6ceaffaa;text-shadow:0 0 7px #50eaff,0 0 15px #a56cff;box-shadow:0 0 10px #4bdfff33,inset 0 0 9px #6ceaff22;transition:transform .12s ease}
 </style></head>
 <body><div id="app">
 <header><div class="logo">NEON <span>OVERDRIVE</span></div><div class="stats"><span>◆ <b id="crystals">0</b></span><span>PTS <b id="score">0</b></span><span>VAGUE <b id="wave">1</b></span><span>LVL <b id="level">1</b></span></div></header>
@@ -155,7 +157,7 @@ let crystals=Math.max(0,saved.crystals),level=Math.max(1,saved.level),xp=Math.ma
 const persist=()=>{saved.crystals=crystals;saved.level=level;saved.xp=xp;try{localStorage.setItem('neonOverdriveV2',JSON.stringify(saved))}catch{}};
 let upgrades={rate:0,power:0,magnet:0,drone:0},player=null,guestShip=null,lasers=[],hostileShots=[],enemies=[],allies=[],allySpawnClock=0,particles=[],drops=[],stars=[],shootingStars=[],shootingStarClock=0,score=0,wave=1,hp=100,playing=false,paused=false,ended=false,spawnClock=0,shotClock=0,enemyClock=0,bossSpawned=false,bossId=0,shake=0;
 let peer=null,conn=null,mode='solo',remoteTarget=null,netSnapshot=null,lastSync=0,connecting=false;
-let audio=null,musicGain=null,musicOn=false,musicVolume=45;
+let audio=null,musicGain=null,musicOn=false,musicVolume=45,musicDisplayValue=45,musicAnimFrame=0;
 function updateHud(){ $('crystals').textContent=crystals;$('score').textContent=score;$('wave').textContent=wave;$('level').textContent=level;$('hp').textContent=Math.max(0,Math.ceil(hp));$('sector').textContent=wave%5===0?'⚠ SECTEUR BOSS':'SECTEUR '+String(wave).padStart(2,'0');$('record').textContent='🏆 '+saved.wins+' • 💀 '+saved.deaths}
 function needed(l){return 100+(l-1)*75+(l-1)*(l-1)*25}
 function addXP(n){xp+=n;while(xp>=needed(level)){xp-=needed(level);level++}persist();updateHud()}
@@ -348,11 +350,23 @@ function soundEffect(freq=440,duration=.09,type='triangle'){
  if(!audio)return;try{const osc=audio.createOscillator(),gain=audio.createGain();osc.type=type;osc.frequency.setValueAtTime(freq,audio.currentTime);osc.frequency.exponentialRampToValueAtTime(Math.max(45,freq*.48),audio.currentTime+duration);gain.gain.setValueAtTime(.0001,audio.currentTime);gain.gain.exponentialRampToValueAtTime(.045,audio.currentTime+.008);gain.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+duration);osc.connect(gain);gain.connect(audio.destination);osc.start();osc.stop(audio.currentTime+duration+.02)}catch{}
 }
 function refreshMusicVolume(){
- $('musicVolume').textContent=musicVolume+'%';
- $('musicVolume').style.transition='transform .16s ease, opacity .16s ease';
- $('musicVolume').style.transform='scale(1.08)';
- setTimeout(()=>$('musicVolume').style.transform='scale(1)',120);
- if(audio&&musicOn)musicGain.gain.setTargetAtTime(.3*(musicVolume/100),audio.currentTime,.28);
+ const display=$('musicVolume'),from=musicDisplayValue,to=musicVolume,duration=320,started=performance.now();
+ if(musicAnimFrame)cancelAnimationFrame(musicAnimFrame);
+ const animate=now=>{
+  const progress=Math.min(1,(now-started)/duration),eased=1-Math.pow(1-progress,3);
+  musicDisplayValue=from+(to-from)*eased;
+  display.textContent=Math.round(musicDisplayValue)+'%';
+  display.style.transform='scale('+(1+.08*Math.sin(progress*Math.PI))+')';
+  if(progress<1)musicAnimFrame=requestAnimationFrame(animate);
+  else{musicDisplayValue=to;display.textContent=to+'%';display.style.transform='scale(1)';musicAnimFrame=0;}
+ };
+ musicAnimFrame=requestAnimationFrame(animate);
+ if(audio&&musicOn){
+  const now=audio.currentTime,target=.3*(musicVolume/100);
+  musicGain.gain.cancelScheduledValues(now);
+  musicGain.gain.setValueAtTime(musicGain.gain.value,now);
+  musicGain.gain.linearRampToValueAtTime(target,now+.32);
+ }
 }
 $('musicDown').onclick=()=>{musicVolume=Math.max(0,musicVolume-5);refreshMusicVolume()};
 $('musicUp').onclick=()=>{musicVolume=Math.min(100,musicVolume+5);refreshMusicVolume()};
