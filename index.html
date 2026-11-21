@@ -304,23 +304,27 @@ $('join').onclick=()=>{const code=prompt('Code de salon à 6 chiffres :');if(!co
 let musicSource=null;
 function buildSoundtrack(){
  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)throw new Error('Audio indisponible');
- if(!audio){audio=new AC();const sr=22050,duration=16,length=sr*duration,buffer=audio.createBuffer(1,length,sr),data=buffer.getChannelData(0);
- const roots=[55,73.42,65.41,49],chords=[[0,7,12,16],[0,7,12,14],[0,7,12,15],[0,7,12,14]],arp=[0,7,12,16,19,16,12,7];
- const notes=[];
- for(let bar=0;bar<8;bar++){const root=roots[bar%4];for(let s=0;s<8;s++)notes.push({t:bar*2+s*.25,f:root*Math.pow(2,arp[s]/12),dur:.21});}
- for(let i=0;i<length;i++){const t=i/sr,beat=t%0.5,bar=Math.floor(t/2)%4,step=Math.floor((t%2)/.25),root=roots[bar],ch=chords[bar];let v=0;
- const ae=Math.exp(-((t%0.25)*15)),bassEnv=Math.exp(-beat*5);
- const f=root*Math.pow(2,arp[step]/12);
- v+=(Math.sin(2*Math.PI*f*t)+.28*Math.sin(4*Math.PI*f*t))*.075*ae;
- v+=(Math.sin(2*Math.PI*root*t)+.22*Math.sin(4*Math.PI*root*t))*.12*bassEnv;
- for(let n=0;n<ch.length;n++){const cf=root*2*Math.pow(2,ch[n]/12);v+=Math.sin(2*Math.PI*cf*t+n*.3)*.012;}
- const kickF=42+95*Math.exp(-beat*22);v+=Math.sin(2*Math.PI*kickF*beat)*.19*Math.exp(-beat*12);
- const beatIndex=Math.floor(t/.5)%4;if(beatIndex===1||beatIndex===3){const snareT=beat;const noise=Math.sin(i*12.9898)*Math.cos(i*4.1414);v+=noise*.045*Math.exp(-snareT*19);}
- const hatT=t%0.25,hatNoise=Math.sin(i*78.233)*Math.sin(i*13.71);v+=hatNoise*.018*Math.exp(-hatT*45);
- const fade=Math.min(1,t*35,(duration-t)*35);data[i]=Math.max(-.85,Math.min(.85,v*fade));
- }
- musicSource=audio.createBufferSource();musicSource.buffer=buffer;musicSource.loop=true;
- musicGain=audio.createGain();musicGain.gain.value=0;musicSource.connect(musicGain);musicGain.connect(audio.destination);musicSource.start();
+ if(!audio){
+  audio=new AC();const sr=22050,duration=16,length=sr*duration,buffer=audio.createBuffer(2,length,sr);
+  const roots=[55,43.65,65.41,49],chords=[[0,3,7,12],[0,4,7,12],[0,4,7,12],[0,3,7,12]],scale=[0,3,7,10,12,10,7,3];
+  const left=buffer.getChannelData(0),right=buffer.getChannelData(1),twoPi=2*Math.PI;
+  for(let i=0;i<length;i++){
+   const t=i/sr,beat=t%0.5,bar=Math.floor(t/2)%4,step=Math.floor((t%2)/.25),root=roots[bar],ch=chords[bar];
+   const kickPhase=beat,hatPhase=t%0.25,sixteenth=Math.floor((t%0.5)/.125),sidechain=1-.42*Math.exp(-kickPhase*11),arpEnv=Math.exp(-((t%0.25)*13));
+   let l=0,r=0;
+   for(let n=0;n<ch.length;n++){const f=root*2*Math.pow(2,ch[n]/12),p=t*f*twoPi,pad=(Math.sin(p)+.42*Math.sin(p*1.006+.4)+.28*Math.sin(p*.994-.3))/1.7;l+=pad*.025*sidechain;r+=pad*.025*sidechain;}
+   const bassPhase=t*root*twoPi,bass=(Math.sin(bassPhase)+.22*Math.sin(bassPhase*2))*Math.exp(-beat*2.8);l+=bass*.19;r+=bass*.19;
+   const note=root*4*Math.pow(2,scale[step]/12),leadPhase=t*note*twoPi,lead=(Math.sin(leadPhase)+.32*Math.sin(leadPhase*2)+.12*Math.sin(leadPhase*3))*arpEnv;l+=lead*.075;r+=lead*.065;
+   if(step===2||step===6){const melody=root*8*Math.pow(2,scale[(step+2)%8]/12),env=Math.exp(-((t%0.5-.25)*8)),m=Math.sin(t*melody*twoPi)*Math.max(0,env);l+=m*.035;r+=m*.05;}
+   const kickF=48+105*Math.exp(-kickPhase*24),kick=Math.sin(twoPi*kickF*kickPhase)*Math.exp(-kickPhase*13);l+=kick*.24;r+=kick*.24;
+   const beatIndex=Math.floor(t/.5)%4;
+   if(beatIndex===1||beatIndex===3){const snare=beat,noise=Math.sin(i*12.9898)*Math.cos(i*4.1414),hit=(noise*.72+Math.sin(twoPi*185*snare)*.28)*Math.exp(-snare*18);l+=hit*.07;r+=hit*.065;}
+   const hatNoise=Math.sin(i*78.233)*Math.sin(i*13.71),hat=hatNoise*Math.exp(-hatPhase*58)*(sixteenth%2===1?1:.42);l+=hat*.027;r+=hat*.03;
+   const shimmer=Math.sin(twoPi*(note*1.5)*t)*arpEnv;l+=shimmer*.009;r-=shimmer*.009;
+   const fade=Math.min(1,t*28,(duration-t)*28),master=.82*fade;left[i]=Math.max(-.92,Math.min(.92,l*master));right[i]=Math.max(-.92,Math.min(.92,r*master));
+  }
+  musicSource=audio.createBufferSource();musicSource.buffer=buffer;musicSource.loop=true;
+  musicGain=audio.createGain();musicGain.gain.value=0;musicSource.connect(musicGain);musicGain.connect(audio.destination);musicSource.start();
  }
 }
 function soundEffect(freq=440,duration=.09,type='triangle'){
