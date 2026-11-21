@@ -306,22 +306,39 @@ function buildSoundtrack(){
  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)throw new Error('Audio indisponible');
  if(!audio){
   audio=new AC();const sr=22050,duration=16,length=sr*duration,buffer=audio.createBuffer(2,length,sr);
-  const roots=[55,43.65,65.41,49],chords=[[0,3,7,12],[0,4,7,12],[0,4,7,12],[0,3,7,12]],scale=[0,3,7,10,12,10,7,3];
-  const left=buffer.getChannelData(0),right=buffer.getChannelData(1),twoPi=2*Math.PI;
+  const roots=[55,65.41,49,73.42],chords=[[0,7,10,14],[0,7,10,15],[0,7,10,14],[0,7,11,14]],scale=[0,3,7,10,12,10,7,5];
+  const left=buffer.getChannelData(0),right=buffer.getChannelData(1),tau=2*Math.PI;
+  let seed=9173;const noise=()=>{seed=(seed*16807)%2147483647;return seed/1073741823-1};
   for(let i=0;i<length;i++){
    const t=i/sr,beat=t%0.5,bar=Math.floor(t/2)%4,step=Math.floor((t%2)/.25),root=roots[bar],ch=chords[bar];
-   const kickPhase=beat,hatPhase=t%0.25,sixteenth=Math.floor((t%0.5)/.125),sidechain=1-.42*Math.exp(-kickPhase*11),arpEnv=Math.exp(-((t%0.25)*13));
+   const pump=1-.48*Math.exp(-beat*13),arpPhase=t%0.25,arpEnv=Math.exp(-arpPhase*17),barEnv=.82+.18*Math.sin(Math.PI*(t%2)/2);
    let l=0,r=0;
-   for(let n=0;n<ch.length;n++){const f=root*2*Math.pow(2,ch[n]/12),p=t*f*twoPi,pad=(Math.sin(p)+.42*Math.sin(p*1.006+.4)+.28*Math.sin(p*.994-.3))/1.7;l+=pad*.025*sidechain;r+=pad*.025*sidechain;}
-   const bassPhase=t*root*twoPi,bass=(Math.sin(bassPhase)+.22*Math.sin(bassPhase*2))*Math.exp(-beat*2.8);l+=bass*.19;r+=bass*.19;
-   const note=root*4*Math.pow(2,scale[step]/12),leadPhase=t*note*twoPi,lead=(Math.sin(leadPhase)+.32*Math.sin(leadPhase*2)+.12*Math.sin(leadPhase*3))*arpEnv;l+=lead*.075;r+=lead*.065;
-   if(step===2||step===6){const melody=root*8*Math.pow(2,scale[(step+2)%8]/12),env=Math.exp(-((t%0.5-.25)*8)),m=Math.sin(t*melody*twoPi)*Math.max(0,env);l+=m*.035;r+=m*.05;}
-   const kickF=48+105*Math.exp(-kickPhase*24),kick=Math.sin(twoPi*kickF*kickPhase)*Math.exp(-kickPhase*13);l+=kick*.24;r+=kick*.24;
+   for(let n=0;n<ch.length;n++){
+    const f=root*2*Math.pow(2,ch[n]/12),p=t*f*tau;
+    l+=(Math.sin(p)+.35*Math.sin(p*1.004+.5)+.18*Math.sin(p*.5))*.018*pump;
+    r+=(Math.sin(p+.12)+.35*Math.sin(p*.996-.4)+.18*Math.sin(p*.5+.2))*.018*pump;
+   }
+   const bassF=root*(step%4===2?1.5:1),bp=t*bassF*tau,bass=(Math.sin(bp)+.28*Math.sin(bp*2)+.09*Math.sin(bp*3))*Math.exp(-beat*2.1);
+   l+=bass*.19;r+=bass*.19;
+   const arpNote=root*4*Math.pow(2,scale[(step+(bar%2?2:0))%8]/12),ap=t*arpNote*tau;
+   const pluck=(Math.sin(ap)+.42*Math.sin(ap*2)+.16*Math.sin(ap*3))*arpEnv;
+   l+=pluck*(step%2?.048:.085);r+=pluck*(step%2?.085:.048);
+   if(step===2||step===6){
+    const f=root*8*Math.pow(2,scale[(step+bar)%8]/12),e=Math.exp(-arpPhase*7),lead=(Math.sin(t*f*tau)+.22*Math.sin(t*f*2*tau))*e;
+    l+=lead*.045;r+=lead*.065;
+   }
+   const kickF=43+115*Math.exp(-beat*25),kick=Math.sin(tau*kickF*beat)*Math.exp(-beat*12);
+   l+=kick*.27;r+=kick*.27;
    const beatIndex=Math.floor(t/.5)%4;
-   if(beatIndex===1||beatIndex===3){const snare=beat,noise=Math.sin(i*12.9898)*Math.cos(i*4.1414),hit=(noise*.72+Math.sin(twoPi*185*snare)*.28)*Math.exp(-snare*18);l+=hit*.07;r+=hit*.065;}
-   const hatNoise=Math.sin(i*78.233)*Math.sin(i*13.71),hat=hatNoise*Math.exp(-hatPhase*58)*(sixteenth%2===1?1:.42);l+=hat*.027;r+=hat*.03;
-   const shimmer=Math.sin(twoPi*(note*1.5)*t)*arpEnv;l+=shimmer*.009;r-=shimmer*.009;
-   const fade=Math.min(1,t*28,(duration-t)*28),master=.82*fade;left[i]=Math.max(-.92,Math.min(.92,l*master));right[i]=Math.max(-.92,Math.min(.92,r*master));
+   if(beatIndex===1||beatIndex===3){
+    const snareEnv=Math.exp(-beat*19),n=noise(),clap=(n*.65+Math.sin(tau*190*beat)*.35)*snareEnv;
+    l+=clap*.095;r+=clap*.105;
+   }
+   const hatEnv=Math.exp(-arpPhase*(step%2?42:67)),hat=noise()*hatEnv;
+   l+=hat*(step%4===3?.045:.022);r+=hat*(step%4===3?.052:.024);
+   if(step===3||step===7){const sh=Math.sin(tau*arpNote*2.01*t)*Math.exp(-arpPhase*24);l+=sh*.012;r-=sh*.012;}
+   const fade=Math.min(1,t*24,(duration-t)*24),master=.76*fade*barEnv;
+   left[i]=Math.max(-.94,Math.min(.94,l*master));right[i]=Math.max(-.94,Math.min(.94,r*master));
   }
   musicSource=audio.createBufferSource();musicSource.buffer=buffer;musicSource.loop=true;
   musicGain=audio.createGain();musicGain.gain.value=0;musicSource.connect(musicGain);musicGain.connect(audio.destination);musicSource.start();
