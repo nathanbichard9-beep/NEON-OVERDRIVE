@@ -62,7 +62,7 @@ button:active{transform:scale(.97);filter:brightness(1.25)}button.primary{backgr
 (()=>{'use strict';
 const $=id=>document.getElementById(id),canvas=$('game'),ctx=canvas.getContext('2d');
 let W=1,H=1,D=1,frame=0,raf=0,last=0;
-function resize(){const r=canvas.getBoundingClientRect();W=Math.max(1,r.width);H=Math.max(1,r.height);D=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(W*D);canvas.height=Math.round(H*D);ctx.setTransform(D,0,0,D,0,0)}
+function resize(){const r=canvas.getBoundingClientRect();W=Math.max(1,r.width);H=Math.max(1,r.height);D=Math.min(devicePixelRatio||1,1.5);canvas.width=Math.round(W*D);canvas.height=Math.round(H*D);ctx.setTransform(D,0,0,D,0,0)}
 new ResizeObserver(resize).observe(canvas);resize();
 const fresh=()=>({wins:0,deaths:0,games:0,best:0,board:[],crystals:0,level:1,xp:0});
 let saved;try{saved=JSON.parse(localStorage.getItem('neonOverdriveV2'))}catch{saved=null}
@@ -77,7 +77,7 @@ function updateHud(){ $('crystals').textContent=crystals;$('score').textContent=
 function needed(l){return 100+(l-1)*75+(l-1)*(l-1)*25}
 function addXP(n){xp+=n;while(xp>=needed(level)){xp-=needed(level);level++}persist();updateHud()}
 function rand(a,b){return a+Math.random()*(b-a)}
-function burst(x,y,color,count=12){for(let i=0;i<count;i++){const a=rand(0,Math.PI*2),v=rand(1,4);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rand(15,32),max:32,color,size:rand(1,3)})}}
+function burst(x,y,color,count=10){count=Math.min(count,10);for(let i=0;i<count;i++){const a=rand(0,Math.PI*2),v=rand(1,4);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rand(15,32),max:32,color,size:rand(1,3)});if(particles.length>180)particles.splice(0,particles.length-180)}}
 function reset(){frame=0;score=0;wave=1;hp=100;playing=true;paused=false;ended=false;bossSpawned=false;player={x:W/2,y:H*.78,tx:W/2,ty:H*.78};guestShip=null;remoteTarget=null;lasers=[];hostileShots=[];enemies=[];allies=[];allySpawnClock=rand(9000,16000);particles=[];drops=[];upgrades={rate:0,power:0,magnet:0,drone:0};spawnClock=0;shotClock=0;enemyClock=0;shake=0;stars=Array.from({length:110},()=>({x:rand(0,W),y:rand(0,H),speed:rand(.35,1.8),size:rand(.5,2)}));updateHud()}
 function newEnemy(isBoss=false){if(isBoss){bossSpawned=true;bossId++;const type=(Math.floor(wave/5)-1)%3;const base=115+wave*17;const max=Math.round(base*[1,1.16,1.32][type]*(mode==='host'&&remoteTarget?1.35:1));enemies.push({x:W/2,y:-60,v:1.1+wave*.012,r:34+type*5,hp:max,max,boss:true,type,phase:rand(0,6),shoot:0});return}
 const max=2+Math.floor(wave*.7);enemies.push({x:rand(25,W-25),y:-25,v:rand(1.1,2.1)+wave*.075,r:rand(12,19),hp:max,max,boss:false,phase:rand(0,6)})}
@@ -283,21 +283,21 @@ function makeSaucer3D(){
  return g;
 }
 function initThree(){try{
- if(!window.THREE)throw Error('Three.js non chargé');const el=$('threeScene'),renderer=new THREE.WebGLRenderer({canvas:el,alpha:false,antialias:false,powerPreference:'low-power'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.1));renderer.setClearColor(0x030817,1);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;renderer.toneMappingExposure=1;scene3D.renderer=renderer;
+ if(!window.THREE)throw Error('Three.js non chargé');const el=$('threeScene'),renderer=new THREE.WebGLRenderer({canvas:el,alpha:false,antialias:false,powerPreference:'low-power'});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1));renderer.setClearColor(0x030817,1);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NoToneMapping;renderer.toneMappingExposure=1;scene3D.renderer=renderer;
  const scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x030817,.018);scene3D.scene=scene;
  const camera=new THREE.PerspectiveCamera(48,1,.1,120);camera.position.set(0,20,25);camera.lookAt(0,0,0);scene3D.camera=camera;
  scene.add(new THREE.HemisphereLight(0x9bdfff,0x10132f,2));const key=new THREE.PointLight(0x38cfff,55,55);key.position.set(-5,10,3);scene.add(key);scene3D.keyLight=key;const rim=new THREE.PointLight(0xb14cff,42,45);rim.position.set(6,8,-8);scene.add(rim);scene3D.rimLight=rim;
  scene3D.world=new THREE.Group();scene.add(scene3D.world);scene3D.ship=makeShip3D(0x5df4ff,saved.ship||'vanguard');scene3D.world.add(scene3D.ship);scene3D.guest=makeShip3D(0xff70d9,'phantom');scene3D.world.add(scene3D.guest);scene3D.guest.visible=false;
  const aura=new THREE.Group();const auraMat=new THREE.MeshBasicMaterial({color:0x55eaff,transparent:true,opacity:.32,blending:THREE.AdditiveBlending,depthWrite:false});const auraRing=new THREE.Mesh(new THREE.TorusGeometry(1.55,.035,10,64),auraMat);auraRing.rotation.x=Math.PI/2;aura.add(auraRing);const auraRing2=new THREE.Mesh(new THREE.TorusGeometry(1.9,.018,8,64),new THREE.MeshBasicMaterial({color:0xb985ff,transparent:true,opacity:.2,blending:THREE.AdditiveBlending,depthWrite:false}));auraRing2.rotation.x=Math.PI/2;auraRing2.rotation.z=.35;aura.add(auraRing2);aura.position.y=-.42;aura.visible=false;scene3D.ship.add(aura);scene3D.ultimateAura=aura;
  const auraLight=new THREE.PointLight(0x55dfff,0,9);auraLight.position.set(0,1.2,0);scene3D.ship.add(auraLight);scene3D.ultimateLight=auraLight;
- const resize=()=>{const w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);renderer.setPixelRatio(Math.min(devicePixelRatio||1,scene3D.ultimate?1.25:1.05));renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()};new ResizeObserver(resize).observe(el);resize();scene3D.ready=true;
+ const resize=()=>{const w=Math.max(1,el.clientWidth),h=Math.max(1,el.clientHeight);renderer.setPixelRatio(Math.min(devicePixelRatio||1,scene3D.ultimate?1.1:1));renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()};new ResizeObserver(resize).observe(el);resize();scene3D.ready=true;
  }catch(e){console.warn('3D indisponible',e);$('threeScene').style.display='none';$('game').style.opacity='1'}}
 function setUltimateGraphics(on){
  scene3D.ultimate=!!on;
  const b=$('ultimateGraphics');b.textContent=scene3D.ultimate?'✦ MODE ULTIME : ON':'✧ MODE ULTIME : OFF';b.setAttribute('aria-pressed',String(scene3D.ultimate));
  b.style.borderColor=scene3D.ultimate?'#ffd77a':'#4ddfff88';b.style.boxShadow=scene3D.ultimate?'0 0 18px #ffcf5c66':'0 0 12px #00cfff19';
  if(!scene3D.ready)return;
- const r=scene3D.renderer;r.setPixelRatio(Math.min(devicePixelRatio||1,scene3D.ultimate?1.25:1.05));
+ const r=scene3D.renderer;r.setPixelRatio(Math.min(devicePixelRatio||1,scene3D.ultimate?1.1:1));
  r.shadowMap.enabled=false;r.shadowMap.type=THREE.BasicShadowMap;
  r.toneMapping=scene3D.ultimate?THREE.ACESFilmicToneMapping:THREE.NoToneMapping;r.toneMappingExposure=scene3D.ultimate?1.16:1;
  scene3D.keyLight.castShadow=false;
