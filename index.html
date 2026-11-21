@@ -230,8 +230,37 @@ function drawShip(x,y,color,scale=1){
  ctx.lineWidth=1;ctx.strokeStyle=color;ctx.globalAlpha=.8;for(const side of [-1,1]){ctx.beginPath();ctx.moveTo(side*(phantom?8:12),-7);ctx.lineTo(side*(titan?25:20),8);ctx.lineTo(side*(titan?17:12),11);ctx.stroke();ctx.fillStyle=titan?'#ffcf82':'#a9eaff';ctx.fillRect(side*(titan?19:15)-2,5,4,5);ctx.fillStyle='#07152b';ctx.fillRect(side*(titan?13:10)-2,-1,4,8)}ctx.globalAlpha=1;
  const hull=ctx.createLinearGradient(-10,0,10,0);hull.addColorStop(0,'#07152d');hull.addColorStop(.5,titan?'#92704a':phantom?'#62448b':'#39718e');hull.addColorStop(1,'#07152d');ctx.fillStyle=hull;ctx.strokeStyle='#e5ffff';ctx.lineWidth=1;
  ctx.beginPath();ctx.moveTo(0,-27);ctx.lineTo(titan?8:6,-5);ctx.lineTo(titan?7:5,16);ctx.lineTo(0,23);ctx.lineTo(titan?-7:-5,16);ctx.lineTo(titan?-8:-6,-5);ctx.closePath();ctx.fill();ctx.stroke();
+ // Wing armor: layered plates, illuminated panel seams and intake vents.
+ ctx.save();ctx.shadowBlur=0;ctx.lineWidth=.8;
+ for(const side of [-1,1]){
+  ctx.save();ctx.scale(side,1);
+  ctx.fillStyle=titan?'#8b6845':phantom?'#50366f':'#24516f';
+  ctx.strokeStyle=titan?'#ffe0a3':color;
+  ctx.globalAlpha=.9;ctx.beginPath();
+  ctx.moveTo(8,-4);ctx.lineTo(titan?25:20,9);ctx.lineTo(titan?18:12,10);ctx.lineTo(7,4);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.globalAlpha=.72;ctx.strokeStyle='#eaffff';ctx.beginPath();ctx.moveTo(11,-1);ctx.lineTo(titan?23:18,8);ctx.stroke();
+  ctx.strokeStyle=color;ctx.globalAlpha=.9;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(titan?18:14,11);ctx.lineTo(titan?26:21,14);ctx.stroke();
+  ctx.fillStyle='#071326';ctx.fillRect(titan?13:10,2,2,5);ctx.fillRect(titan?17:14,5,2,5);
+  ctx.fillStyle=color;ctx.globalAlpha=.85;ctx.fillRect(titan?22:17,9,3,2);
+  ctx.restore();
+ }
+ ctx.restore();ctx.globalAlpha=1;
+ // Engine housings and bright exhaust cores.
+ for(const side of [-1,1]){
+  const ex=side*(titan?15:phantom?11:12);
+  ctx.fillStyle='#050c1b';ctx.strokeStyle=color;ctx.lineWidth=1.2;
+  ctx.beginPath();ctx.roundRect(ex-4,20,8,7,2);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#fff';ctx.shadowBlur=12;ctx.shadowColor=color;ctx.fillRect(ex-1.5,22,3,5);
+  ctx.shadowBlur=0;ctx.strokeStyle='#d9fbff';ctx.globalAlpha=.65;ctx.beginPath();ctx.moveTo(ex-2,19);ctx.lineTo(ex-2,15);ctx.moveTo(ex+2,19);ctx.lineTo(ex+2,15);ctx.stroke();ctx.globalAlpha=1;
+ }
+ // Nose insignia, hull panel seams and cockpit reflections.
+ ctx.strokeStyle=color;ctx.lineWidth=.8;ctx.globalAlpha=.8;
+ ctx.beginPath();ctx.moveTo(0,-24);ctx.lineTo(0,-18);ctx.moveTo(-4,-2);ctx.lineTo(-7,12);ctx.moveTo(4,-2);ctx.lineTo(7,12);ctx.stroke();
+ ctx.fillStyle='#eaffff';ctx.globalAlpha=.9;ctx.beginPath();ctx.moveTo(0,-22);ctx.lineTo(2,-18);ctx.lineTo(0,-16);ctx.lineTo(-2,-18);ctx.closePath();ctx.fill();
+ ctx.globalAlpha=1;ctx.strokeStyle='#dffcff';ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(-2,-8);ctx.lineTo(0,-14);ctx.lineTo(2,-8);ctx.stroke();
+ if(titan){ctx.strokeStyle='#ffe0a3';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(-15,2);ctx.lineTo(-22,10);ctx.moveTo(15,2);ctx.lineTo(22,10);ctx.stroke()}
  ctx.fillStyle='#061326';ctx.strokeStyle=color;ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(0,-17);ctx.lineTo(4.5,-5);ctx.lineTo(3,5);ctx.lineTo(0,8);ctx.lineTo(-3,5);ctx.lineTo(-4.5,-5);ctx.closePath();ctx.fill();ctx.stroke();
- ctx.strokeStyle='#eaffff';ctx.globalAlpha=.8;ctx.beginPath();ctx.moveTo(-2,-9);ctx.lineTo(0,-14);ctx.stroke();ctx.globalAlpha=1;
+ ctx.strokeStyle='#eaffff';ctx.globalAlpha=.8;ctx.beginPath();ctx.moveTo(-2,-9);ctx.lineTo(0,-14);ctx.stroke();ctx.globalAlpha=1;ctx.fillStyle='#fff';ctx.shadowBlur=10;ctx.shadowColor='#bdfaff';ctx.beginPath();ctx.ellipse(-1.4,-8,1.2,4,-.18,0,Math.PI*2);ctx.fill();ctx.shadowBlur=15;
  ctx.fillStyle=color;ctx.shadowBlur=18;ctx.beginPath();ctx.ellipse(0,22,titan?7:5,rand(5,9),0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.globalAlpha=.8;ctx.fillRect(-1,20,2,5);ctx.globalAlpha=1;
  if(titan){ctx.strokeStyle='#ffe0a3';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(-21,-8);ctx.lineTo(-28,5);ctx.moveTo(21,-8);ctx.lineTo(28,5);ctx.stroke()}ctx.restore()
 }
