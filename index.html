@@ -74,6 +74,19 @@ button.primary{background:linear-gradient(120deg,#087fae,#653cb4);border-color:#
 .art-coordinates{position:absolute;bottom:15px;right:16px;color:#6685aa;font-size:8px;letter-spacing:1.4px}
 @media(max-width:650px){#menu{max-height:96%;overflow:auto}.menu-layout{grid-template-columns:1fr;min-height:0}.menu-copy{padding:21px}.menu-art{min-height:185px;border-left:0;border-top:1px solid #5ceaff20}.hero-ship{transform:scale(.68);height:145px}.art-orbit{width:190px;height:190px}.orbit-two{width:245px;height:245px}.art-caption{bottom:12px;left:55%;text-align:left}.art-caption b{font-size:14px}.art-caption span,.art-caption small{font-size:7px}.art-coordinates{display:none}#menu .menu-desc{margin-bottom:9px}}
 @media(max-width:390px){#menu .actions{grid-template-columns:1fr 1fr}#menu .actions button{font-size:9px;padding:9px 5px}.menu-tags span{font-size:8px}}
+
+/* Premium title emblem above the launch button */
+#menu .brand-lockup{position:relative;width:max-content;max-width:100%;margin:0 0 17px;padding:3px 0 0}
+#menu .brand-emblem{position:relative;width:39px;height:39px;margin:0 0 11px 3px;display:grid;place-items:center;border:1px solid #70edff9c;transform:rotate(45deg);border-radius:10px;background:linear-gradient(145deg,#163c5d,#171332);box-shadow:0 0 18px #35dfff44,inset 0 0 12px #6ceaff20}
+#menu .brand-emblem span{transform:rotate(-45deg);font-size:24px;color:#bafaff;text-shadow:0 0 12px #52efff,0 0 24px #52efff}
+#menu .brand-emblem i{position:absolute;width:5px;height:5px;right:-4px;top:-4px;border-radius:50%;background:#ff80dc;box-shadow:0 0 10px #ff80dc}
+#menu .brand-lockup h1{display:grid;gap:0;margin:0;font-size:clamp(39px,7.2vw,67px);line-height:.83;letter-spacing:-2.8px;font-weight:1000}
+#menu .brand-neon{color:#f4fdff;text-shadow:0 0 9px #8bf7ff88,0 0 28px #35dfff66}
+#menu .brand-overdrive{margin-top:7px;font-size:.67em;letter-spacing:clamp(2px,.65vw,5px);font-weight:950;color:transparent;-webkit-text-stroke:1px #9c8cff;background:linear-gradient(95deg,#71efff,#b78aff 55%,#ff82d7);background-clip:text;-webkit-background-clip:text;filter:drop-shadow(0 0 10px #9d69ff55)}
+#menu .brand-underline{display:flex;align-items:center;gap:9px;width:100%;margin-top:15px;color:#78eaff;font-size:8px;letter-spacing:3px;text-shadow:0 0 9px #55eaff}
+#menu .brand-underline i{height:1px;flex:1;background:linear-gradient(90deg,#64efff,transparent);box-shadow:0 0 7px #64efff}
+#menu .brand-underline i:last-child{background:linear-gradient(90deg,transparent,#c58aff)}
+@media(max-width:650px){#menu .brand-lockup{margin-bottom:13px}#menu .brand-emblem{width:31px;height:31px;margin-bottom:9px}#menu .brand-emblem span{font-size:19px}#menu .brand-lockup h1{font-size:clamp(37px,10vw,53px)}}
 </style></head>
 <body><div id="app">
 <header><div class="logo">NEON <span>OVERDRIVE</span></div><div class="stats"><span>◆ <b id="crystals">0</b></span><span>PTS <b id="score">0</b></span><span>VAGUE <b id="wave">1</b></span><span>LVL <b id="level">1</b></span></div></header>
@@ -82,7 +95,7 @@ button.primary{background:linear-gradient(120deg,#087fae,#653cb4);border-color:#
 <div class="menu-layout">
 <div class="menu-copy">
 <div class="kicker"><span class="live-dot"></span> SYSTEM ONLINE • SECTEUR 01</div>
-<h1>NEON<br><span class="title-accent">OVERDRIVE</span></h1>
+<div class="brand-lockup"><div class="brand-emblem"><span>✦</span><i></i></div><h1><span class="brand-neon">NEON</span><span class="brand-overdrive">OVERDRIVE</span></h1><div class="brand-underline"><i></i><span>Ｎ • O</span><i></i></div></div>
 <p class="menu-lead">La galaxie est tombée. Reprends le contrôle.</p>
 <p class="menu-desc">Pilote ton intercepteur, traverse les vagues ennemies et bâtis ton arsenal. Chaque secteur te rapproche d'un boss plus dangereux.</p>
 <div class="menu-tags"><span>✦ SHOOT 'EM UP</span><span>⚡ VAGUES INFINIES</span><span>☠ BOSS</span></div>
