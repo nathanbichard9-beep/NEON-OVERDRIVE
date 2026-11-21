@@ -347,7 +347,7 @@ function buildSoundtrack(){
 function soundEffect(freq=440,duration=.09,type='triangle'){
  if(!audio)return;try{const osc=audio.createOscillator(),gain=audio.createGain();osc.type=type;osc.frequency.setValueAtTime(freq,audio.currentTime);osc.frequency.exponentialRampToValueAtTime(Math.max(45,freq*.48),audio.currentTime+duration);gain.gain.setValueAtTime(.0001,audio.currentTime);gain.gain.exponentialRampToValueAtTime(.045,audio.currentTime+.008);gain.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+duration);osc.connect(gain);gain.connect(audio.destination);osc.start();osc.stop(audio.currentTime+duration+.02)}catch{}
 }
-$('music').onclick=()=>{try{buildSoundtrack();if(audio.state==='suspended')audio.resume();musicOn=!musicOn;musicGain.gain.setTargetAtTime(musicOn?.17:0,audio.currentTime,.35);$('music').textContent=musicOn?'♫ MUSIQUE : ON':'♫ MUSIQUE : OFF'}catch{$('music').textContent='AUDIO INDISPONIBLE'}};
+$('music').onclick=()=>{try{buildSoundtrack();if(audio.state==='suspended')audio.resume();musicOn=!musicOn;musicGain.gain.setTargetAtTime(musicOn?.13:0,audio.currentTime,.35);$('music').textContent=musicOn?'♫ MUSIQUE : ON':'♫ MUSIQUE : OFF'}catch{$('music').textContent='AUDIO INDISPONIBLE'}};
 updateHud();
 // Micro-animation sur chaque clic, y compris les boutons créés dynamiquement.
 document.addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b||b.disabled)return;b.classList.remove('clicked');void b.offsetWidth;b.classList.add('clicked');b.addEventListener('animationend',()=>b.classList.remove('clicked'),{once:true})});
