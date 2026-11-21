@@ -338,10 +338,10 @@ function drawShip(x,y,color,scale=1){
 }
 function drawEnemy(e){
  ctx.save();ctx.translate(e.x,e.y);ctx.rotate(Math.sin(e.phase)*.12);
- const boss=e.boss,col=boss?['#ff75dd','#65eaff','#ffc46d','#9d82ff','#ff586f','#75ffb5'][e.type]:'#bd83ff';
+ const boss=e.boss,col=boss?['#ff75dd','#65eaff','#ffc46d','#9d82ff','#ff586f','#75ffb5','#ff425f'][e.type]:'#bd83ff';
  ctx.shadowBlur=boss?28:16;ctx.shadowColor=col;
  // Armored silhouette with layered hull, side fins and engine glow.
- ctx.fillStyle=boss?['#351044','#102c49','#493015','#28184b','#4a1828','#123d35'][e.type]:'#21183d';
+ ctx.fillStyle=boss?['#351044','#102c49','#493015','#28184b','#4a1828','#123d35','#4a1020'][e.type]:'#21183d';
  ctx.strokeStyle=col;ctx.lineWidth=boss?3:2;
  ctx.beginPath();ctx.moveTo(0,-e.r*1.12);ctx.lineTo(e.r*.78,-e.r*.35);ctx.lineTo(e.r*.58,e.r*.62);ctx.lineTo(0,e.r);ctx.lineTo(-e.r*.58,e.r*.62);ctx.lineTo(-e.r*.78,-e.r*.35);ctx.closePath();ctx.fill();ctx.stroke();
  ctx.fillStyle=boss?'#18243c':'#39285e';
