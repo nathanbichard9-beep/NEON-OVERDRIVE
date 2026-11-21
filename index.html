@@ -290,26 +290,7 @@ function initThree(){try{
  const floor=new THREE.Mesh(new THREE.PlaneGeometry(40,48,32,32),new THREE.MeshStandardMaterial({color:0x071329,metalness:.45,roughness:.75,emissive:0x07152b,emissiveIntensity:.6}));floor.rotation.x=-Math.PI/2;floor.position.y=-1.3;scene.add(floor);scene3D.floor=floor;
  const grid=new THREE.GridHelper(40,40,0x1c8cb2,0x183052);grid.position.y=-1.27;grid.material.transparent=true;grid.material.opacity=.32;scene.add(grid);
  scene3D.scenery=new THREE.Group();scene.add(scene3D.scenery);
- // Décor spatial : planètes, anneaux, station orbitale et astéroïdes sur les côtés.
- const planet=(x,y,z,r,color,glowColor)=>{
-  const g=new THREE.Group();const sphere=new THREE.Mesh(new THREE.SphereGeometry(r,32,24),new THREE.MeshStandardMaterial({color,roughness:.82,metalness:.12,emissive:color,emissiveIntensity:.12}));g.add(sphere);
-  const cloud=new THREE.Mesh(new THREE.SphereGeometry(r*1.025,24,18),new THREE.MeshBasicMaterial({color:glowColor,transparent:true,opacity:.12,side:THREE.BackSide}));g.add(cloud);
-  const ring=new THREE.Mesh(new THREE.TorusGeometry(r*1.42,.045,8,72),new THREE.MeshBasicMaterial({color:glowColor,transparent:true,opacity:.62}));ring.rotation.x=1.18;ring.rotation.y=.2;g.add(ring);g.position.set(x,y,z);scene3D.scenery.add(g);scene3D.sceneryBits.push({mesh:g,spin:.0008});
- };
- planet(-15,7,-16,3.1,0x263c78,0x55cfff);planet(16,5,-11,2.15,0x633b79,0xd58aff);
- // Relief des planètes : continents stylisés, villes lumineuses, nuages et petits satellites.
- const addPlanetDetails=(x,y,z,r,tint)=>{
-  const g=new THREE.Group();g.position.set(x,y,z);scene3D.scenery.add(g);
-  const landMat=new THREE.MeshStandardMaterial({color:tint,roughness:1,transparent:true,opacity:.7});
-  const cityMat=new THREE.MeshBasicMaterial({color:0xffd98b});
-  for(let i=0;i<17;i++){const a=rand(0,Math.PI*2),b=rand(.25,Math.PI-.25),rr=r*1.006;const patch=new THREE.Mesh(new THREE.SphereGeometry(rand(.12,.32),10,7),landMat);patch.scale.set(rand(.7,1.8),.16,rand(.65,1.35));patch.position.set(rr*Math.sin(b)*Math.cos(a),rr*Math.cos(b),rr*Math.sin(b)*Math.sin(a));patch.lookAt(0,0,0);g.add(patch)}
-  for(let i=0;i<55;i++){const a=rand(0,Math.PI*2),b=rand(.35,Math.PI-.35),rr=r*1.012;const dot=new THREE.Mesh(new THREE.SphereGeometry(rand(.012,.027),6,5),cityMat);dot.position.set(rr*Math.sin(b)*Math.cos(a),rr*Math.cos(b),rr*Math.sin(b)*Math.sin(a));g.add(dot)}
-  const cloudMat=new THREE.MeshBasicMaterial({color:0xc8eaff,transparent:true,opacity:.13,side:THREE.DoubleSide,depthWrite:false});
-  for(let i=0;i<4;i++){const cloud=new THREE.Mesh(new THREE.TorusGeometry(r*rand(.72,1.03),r*.018,5,48),cloudMat);cloud.rotation.set(rand(0,3),rand(0,3),rand(0,3));g.add(cloud)}
-  for(let i=0;i<3;i++){const moon=new THREE.Mesh(new THREE.SphereGeometry(rand(.12,.22),12,9),new THREE.MeshStandardMaterial({color:0x9aabc4,roughness:1}));const a=i*2.1;moon.position.set(Math.cos(a)*r*2.05,Math.sin(a)*r*.65,Math.sin(a)*r*1.6);g.add(moon)}
-  scene3D.sceneryBits.push({mesh:g,spin:.00022});
- };
- addPlanetDetails(-15,7,-16,3.1,0x397d91);addPlanetDetails(16,5,-11,2.15,0x9a668b);
+ // Planètes et leurs détails retirés ; station, astéroïdes, satellites, vaisseaux et OVNI conservés.
  const station=new THREE.Group();const stationMat=new THREE.MeshStandardMaterial({color:0x334b68,metalness:.85,roughness:.35});const stationGlow=new THREE.MeshBasicMaterial({color:0x53eaff});
  const core=new THREE.Mesh(new THREE.CylinderGeometry(.62,.8,2.7,12),stationMat);core.rotation.z=Math.PI/2;station.add(core);
  for(let side of [-1,1]){const arm=new THREE.Mesh(new THREE.BoxGeometry(3.4,.13,.16),stationMat);arm.position.x=side*1.8;station.add(arm);const panel=new THREE.Mesh(new THREE.BoxGeometry(1.5,.07,.95),new THREE.MeshStandardMaterial({color:0x173a59,metalness:.55,roughness:.4,emissive:0x082a4b}));panel.position.set(side*2.15,.12,0);station.add(panel);const lamp=new THREE.Mesh(new THREE.SphereGeometry(.13,10,8),stationGlow);lamp.position.set(side*1.1,.42,0);station.add(lamp)}
