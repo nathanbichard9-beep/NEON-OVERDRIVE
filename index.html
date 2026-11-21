@@ -155,7 +155,7 @@ let crystals=Math.max(0,saved.crystals),level=Math.max(1,saved.level),xp=Math.ma
 const persist=()=>{saved.crystals=crystals;saved.level=level;saved.xp=xp;try{localStorage.setItem('neonOverdriveV2',JSON.stringify(saved))}catch{}};
 let upgrades={rate:0,power:0,magnet:0,drone:0},player=null,guestShip=null,lasers=[],hostileShots=[],enemies=[],allies=[],allySpawnClock=0,particles=[],drops=[],stars=[],shootingStars=[],shootingStarClock=0,score=0,wave=1,hp=100,playing=false,paused=false,ended=false,spawnClock=0,shotClock=0,enemyClock=0,bossSpawned=false,bossId=0,shake=0;
 let peer=null,conn=null,mode='solo',remoteTarget=null,netSnapshot=null,lastSync=0,connecting=false;
-let audio=null,musicGain=null,musicOn=false,musicVolume=.13;
+let audio=null,musicGain=null,musicOn=false,musicVolume=45;
 function updateHud(){ $('crystals').textContent=crystals;$('score').textContent=score;$('wave').textContent=wave;$('level').textContent=level;$('hp').textContent=Math.max(0,Math.ceil(hp));$('sector').textContent=wave%5===0?'⚠ SECTEUR BOSS':'SECTEUR '+String(wave).padStart(2,'0');$('record').textContent='🏆 '+saved.wins+' • 💀 '+saved.deaths}
 function needed(l){return 100+(l-1)*75+(l-1)*(l-1)*25}
 function addXP(n){xp+=n;while(xp>=needed(level)){xp-=needed(level);level++}persist();updateHud()}
@@ -348,12 +348,16 @@ function soundEffect(freq=440,duration=.09,type='triangle'){
  if(!audio)return;try{const osc=audio.createOscillator(),gain=audio.createGain();osc.type=type;osc.frequency.setValueAtTime(freq,audio.currentTime);osc.frequency.exponentialRampToValueAtTime(Math.max(45,freq*.48),audio.currentTime+duration);gain.gain.setValueAtTime(.0001,audio.currentTime);gain.gain.exponentialRampToValueAtTime(.045,audio.currentTime+.008);gain.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+duration);osc.connect(gain);gain.connect(audio.destination);osc.start();osc.stop(audio.currentTime+duration+.02)}catch{}
 }
 function refreshMusicVolume(){
- $('musicVolume').textContent=Math.round(musicVolume/.3*100)+'%';
- if(audio&&musicOn)musicGain.gain.setTargetAtTime(musicVolume,audio.currentTime,.18);
+ $('musicVolume').textContent=musicVolume+'%';
+ $('musicVolume').style.transition='transform .16s ease, opacity .16s ease';
+ $('musicVolume').style.transform='scale(1.08)';
+ setTimeout(()=>$('musicVolume').style.transform='scale(1)',120);
+ if(audio&&musicOn)musicGain.gain.setTargetAtTime(.3*(musicVolume/100),audio.currentTime,.28);
 }
-$('musicDown').onclick=()=>{musicVolume=Math.max(0,Math.round((musicVolume-.025)*1000)/1000);refreshMusicVolume()};
-$('musicUp').onclick=()=>{musicVolume=Math.min(.3,Math.round((musicVolume+.025)*1000)/1000);refreshMusicVolume()};
-$('music').onclick=()=>{try{buildSoundtrack();if(audio.state==='suspended')audio.resume();musicOn=!musicOn;musicGain.gain.setTargetAtTime(musicOn?musicVolume:0,audio.currentTime,.35);$('music').textContent=musicOn?'♫ MUSIQUE : ON':'♫ MUSIQUE : OFF'}catch{$('music').textContent='AUDIO INDISPONIBLE'}};
+$('musicDown').onclick=()=>{musicVolume=Math.max(0,musicVolume-5);refreshMusicVolume()};
+$('musicUp').onclick=()=>{musicVolume=Math.min(100,musicVolume+5);refreshMusicVolume()};
+refreshMusicVolume();
+$('music').onclick=()=>{try{buildSoundtrack();if(audio.state==='suspended')audio.resume();musicOn=!musicOn;musicGain.gain.setTargetAtTime(musicOn?.3*(musicVolume/100):0,audio.currentTime,.35);$('music').textContent=musicOn?'♫ MUSIQUE : ON':'♫ MUSIQUE : OFF'}catch{$('music').textContent='AUDIO INDISPONIBLE'}};
 updateHud();
 // Micro-animation sur chaque clic, y compris les boutons créés dynamiquement.
 document.addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b||b.disabled)return;b.classList.remove('clicked');void b.offsetWidth;b.classList.add('clicked');b.addEventListener('animationend',()=>b.classList.remove('clicked'),{once:true})});
