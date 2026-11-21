@@ -32,11 +32,73 @@ button:active{transform:scale(.97);filter:brightness(1.25)}button.primary{backgr
 .note{font-size:11px!important;text-align:center;color:#89a7c7!important}
 @media(max-width:430px){header{padding:8px}.stats{gap:6px}.stats span{font-size:10px}.panel{padding:16px}.actions{grid-template-columns:1fr}.actions .primary{grid-column:auto}}
 @media(prefers-reduced-motion:no-preference){.panel{animation:appear .35s ease-out}@keyframes appear{from{opacity:0;transform:translateY(9px) scale(.985)}to{opacity:1;transform:none}}}
+
+/* START SCREEN — neon command deck */
+#menu{width:min(900px,100%);padding:0;overflow:hidden;border-color:#59eaff88;background:linear-gradient(125deg,#0b1730f7 0%,#090d20f8 58%,#17102df7 100%);box-shadow:0 22px 70px #0009,0 0 55px #00cfff20,inset 0 1px #ffffff20}
+.menu-layout{display:grid;grid-template-columns:1.12fr .88fr;min-height:490px}
+.menu-copy{position:relative;z-index:1;padding:clamp(20px,4vw,38px)}
+#menu .kicker{display:flex;align-items:center;gap:9px;margin-bottom:17px;color:#83f5ff;font-size:10px;letter-spacing:2.2px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#65ffbd;box-shadow:0 0 12px #65ffbd;display:inline-block}
+#menu h1{font-size:clamp(37px,7vw,64px);line-height:.9;letter-spacing:-2px;font-weight:1000;color:#f1fcff;text-shadow:0 0 24px #38dfff33}
+#menu .title-accent{color:#72efff;text-shadow:0 0 25px #00cfff88}
+#menu .menu-lead{margin:20px 0 5px;color:#f3f8ff;font-size:clamp(15px,2vw,19px);font-weight:850;letter-spacing:.2px}
+#menu .menu-desc{max-width:440px;margin:7px 0 15px;color:#9eb8d8;font-size:12px;line-height:1.65}
+.menu-tags{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 17px}
+.menu-tags span{padding:6px 8px;border:1px solid #60eaff35;border-radius:5px;background:#52dfff0b;color:#aeeeff;font-size:9px;font-weight:900;letter-spacing:.7px}
+#menu .actions{grid-template-columns:1fr 1fr;gap:8px;margin-top:0}
+#menu .actions button{min-height:39px;padding:10px;font-size:10px;letter-spacing:.35px;border-radius:8px}
+#menu .actions .primary{grid-column:1/-1;min-height:51px;display:flex;align-items:center;justify-content:space-between;padding:0 17px;font-size:13px;background:linear-gradient(105deg,#087da9,#5140a8 75%,#773a9b);box-shadow:0 7px 25px #326fff38,inset 0 1px #ffffff55}
+#menu .actions .primary span{font-size:20px}
+#menu .note{margin:12px 0 0}
+.menu-art{position:relative;min-height:420px;overflow:hidden;background:radial-gradient(ellipse at 52% 43%,#174d7188 0,#17244d66 28%,transparent 65%),linear-gradient(145deg,#111b38,#090d20 75%);border-left:1px solid #5ceaff20;display:flex;align-items:center;justify-content:center}
+.menu-art:before,.menu-art:after{content:"";position:absolute;width:1px;height:160%;top:-30%;left:50%;background:linear-gradient(transparent,#5ceaff35,transparent);transform:rotate(38deg)}
+.menu-art:after{transform:rotate(-38deg);background:linear-gradient(transparent,#bd78ff30,transparent)}
+.art-orbit{position:absolute;width:260px;height:260px;border:1px solid #6beaff25;border-radius:50%;transform:rotate(-25deg) scaleY(.43)}
+.orbit-two{width:340px;height:340px;border-color:#bd78ff26;transform:rotate(45deg) scaleY(.35)}
+.hero-ship{position:relative;width:150px;height:190px;filter:drop-shadow(0 0 17px #49eaff88);transform:translateY(-8px)}
+.ship-core{position:absolute;left:52px;top:25px;width:46px;height:130px;background:linear-gradient(90deg,#386b91,#c6faff 42%,#5ceaff 55%,#284c80);clip-path:polygon(50% 0,83% 27%,100% 76%,68% 100%,50% 88%,32% 100%,0 76%,17% 27%);border:1px solid #b8fbff}
+.ship-wing{position:absolute;top:62px;width:66px;height:105px;background:linear-gradient(135deg,#173d66,#54cde9 48%,#182d58);border:1px solid #7defff;clip-path:polygon(50% 0,100% 100%,48% 78%,0 92%)}
+.wing-left{left:0;transform:rotate(-14deg)}.wing-right{right:0;transform:scaleX(-1) rotate(-14deg)}
+.ship-cockpit{position:absolute;z-index:2;left:63px;top:48px;width:24px;height:46px;border-radius:50% 50% 38% 38%;background:linear-gradient(145deg,#f5ffff,#47c9ff 45%,#283b83);box-shadow:0 0 18px #58eaff}
+.ship-flame{position:absolute;left:66px;top:144px;width:18px;height:43px;background:linear-gradient(#c8ffff,#3feaff 40%,transparent);filter:blur(5px);opacity:.9}
+.art-star{position:absolute;color:#c3faff;text-shadow:0 0 12px #6befff;font-size:23px}.star-a{top:22%;left:20%}.star-b{top:30%;right:18%;font-size:35px}.star-c{bottom:28%;left:17%}
+.art-caption{position:absolute;bottom:49px;left:0;right:0;text-align:center;display:grid;gap:4px}.art-caption span,.art-caption small{font-size:9px;letter-spacing:2px;color:#7fa6c9;font-weight:800}.art-caption b{font-size:19px;letter-spacing:2px;color:#eafaff;text-shadow:0 0 14px #40dfff66}.art-caption i{font-style:normal;color:#62f4ff}
+.art-coordinates{position:absolute;bottom:15px;right:16px;color:#6685aa;font-size:8px;letter-spacing:1.4px}
+@media(max-width:650px){#menu{max-height:96%;overflow:auto}.menu-layout{grid-template-columns:1fr;min-height:0}.menu-copy{padding:21px}.menu-art{min-height:185px;border-left:0;border-top:1px solid #5ceaff20}.hero-ship{transform:scale(.68);height:145px}.art-orbit{width:190px;height:190px}.orbit-two{width:245px;height:245px}.art-caption{bottom:12px;left:55%;text-align:left}.art-caption b{font-size:14px}.art-caption span,.art-caption small{font-size:7px}.art-coordinates{display:none}#menu .menu-desc{margin-bottom:9px}}
+@media(max-width:390px){#menu .actions{grid-template-columns:1fr 1fr}#menu .actions button{font-size:9px;padding:9px 5px}.menu-tags span{font-size:8px}}
 </style></head>
 <body><div id="app">
 <header><div class="logo">NEON <span>OVERDRIVE</span></div><div class="stats"><span>◆ <b id="crystals">0</b></span><span>PTS <b id="score">0</b></span><span>VAGUE <b id="wave">1</b></span><span>LVL <b id="level">1</b></span></div></header>
 <main id="arena"><canvas id="game" aria-label="Arène de jeu"></canvas><div id="hud"><div class="pill">COQUE <b id="hp">100</b>%</div><div class="pill" id="sector">SECTEUR 01</div></div><div id="bossbar"><div id="bossfill"></div></div>
-<div id="overlay"><section class="panel" id="menu"><div class="kicker">✦ ARCADE SPATIALE • ÉDITION RECONSTRUITE</div><h1>NEON<br>OVERDRIVE</h1><p>La galaxie est tombée sous le contrôle des machines. Pilote ton intercepteur, améliore ton arsenal et tiens le plus longtemps possible face aux vagues ennemies.</p><div class="featuregrid"><div class="feature"><b>⚡ COMBAT</b><small>Lasers & combos</small></div><div class="feature"><b>☠ BOSS</b><small>Toutes les 5 vagues</small></div><div class="feature"><b>◆ HANGAR</b><small>Améliorations</small></div></div><p><b>COMMANDES :</b> glisse ton doigt ou déplace la souris. Les canons tirent automatiquement.</p><div class="actions"><button class="primary" id="start">🚀 LANCER UNE PARTIE</button><button id="host">🌐 CRÉER UNE PARTIE</button><button id="join">🔗 REJOINDRE UN CODE</button><button id="profile">🏆 PROFIL & SCORES</button><button id="shopMenu">🛠️ HANGAR</button><button id="trailShopMenu">✨ BOUTIQUE DE TRAÎNÉES</button><button id="fleetMenu">🚀 FLOTTES & VAISSEAUX</button><button id="guideMenu">❔ GUIDE DES COMMANDES</button></div><p class="note" id="network">Mode solo prêt</p></section>
+<div id="overlay"><section class="panel" id="menu">
+<div class="menu-layout">
+<div class="menu-copy">
+<div class="kicker"><span class="live-dot"></span> SYSTEM ONLINE • SECTEUR 01</div>
+<h1>NEON<br><span class="title-accent">OVERDRIVE</span></h1>
+<p class="menu-lead">La galaxie est tombée. Reprends le contrôle.</p>
+<p class="menu-desc">Pilote ton intercepteur, traverse les vagues ennemies et bâtis ton arsenal. Chaque secteur te rapproche d'un boss plus dangereux.</p>
+<div class="menu-tags"><span>✦ SHOOT 'EM UP</span><span>⚡ VAGUES INFINIES</span><span>☠ BOSS</span></div>
+<div class="actions">
+<button class="primary" id="start">🚀 DÉMARRER LA MISSION <span>→</span></button>
+<button id="host">🌐 CRÉER UNE PARTIE</button>
+<button id="join">🔗 REJOINDRE UN CODE</button>
+<button id="profile">🏆 PROFIL & SCORES</button>
+<button id="shopMenu">🛠️ HANGAR</button>
+<button id="trailShopMenu">✨ TRAÎNÉES</button>
+<button id="fleetMenu">🚀 VAISSEAUX</button>
+<button id="guideMenu">❔ GUIDE</button>
+</div>
+<p class="note" id="network">Mode solo prêt</p>
+</div>
+<div class="menu-art">
+<div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div>
+<div class="art-star star-a">✦</div><div class="art-star star-b">·</div><div class="art-star star-c">✧</div>
+<div class="hero-ship"><div class="ship-wing wing-left"></div><div class="ship-wing wing-right"></div><div class="ship-core"></div><div class="ship-cockpit"></div><div class="ship-flame"></div></div>
+<div class="art-caption"><span>VAISSEAU DE CLASSE</span><b>VANGUARD <i>01</i></b><small>PRÊT AU DÉCOLLAGE</small></div>
+<div class="art-coordinates">N 04° 28' • SECTEUR NEON</div>
+</div>
+</div>
+</section>
 <section class="panel hidden" id="shop"><h2>🛠️ HANGAR</h2><p>Équipe ton pilote avec les cristaux récupérés en combat.</p><div class="balance">RÉSERVE : <b id="shopBalance">0</b> ◆</div>
 <div class="shoprow"><div><b>🩹 Réparation</b><small>Restaure jusqu'à 35 PV</small></div><button data-buy="repair">45 ◆</button></div>
 <div class="shoprow"><div><b>💥 Bombe nova</b><small>Élimine les drones, blesse le boss</small></div><button data-buy="nova">90 ◆</button></div>
