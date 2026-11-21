@@ -162,6 +162,7 @@ let crystals=Math.max(0,saved.crystals),level=Math.max(1,saved.level),xp=Math.ma
 const persist=()=>{saved.crystals=crystals;saved.level=level;saved.xp=xp;try{localStorage.setItem('neonOverdriveV2',JSON.stringify(saved))}catch{}};
 let runStartedAt=Date.now(),upgrades={rate:0,power:0,magnet:0,drone:0},player=null,guestShip=null,lasers=[],hostileShots=[],enemies=[],allies=[],allySpawnClock=0,particles=[],drops=[],stars=[],shootingStars=[],shootingStarClock=0,score=0,wave=1,hp=100,playing=false,paused=false,ended=false,spawnClock=0,shotClock=0,enemyClock=0,bossSpawned=false,bossId=0,shake=0;
 let peer=null,conn=null,mode='solo',remoteTarget=null,netSnapshot=null,lastSync=0,connecting=false;
+document.addEventListener('visibilitychange',()=>{if(document.hidden){persist();if(playing&&!paused){paused=true;$('pause').textContent='▶ REPRENDRE'}}});window.addEventListener('pagehide',persist);
 let audio=null,musicGain=null,musicOn=false,musicVolume=45,musicDisplayValue=45,musicAnimFrame=0;
 function updateHud(){ $('crystals').textContent=crystals;$('score').textContent=score;$('wave').textContent=wave;$('level').textContent=level;$('hp').textContent=Math.max(0,Math.ceil(hp));$('sector').textContent=wave%5===0?'⚠ SECTEUR BOSS':'SECTEUR '+String(wave).padStart(2,'0');$('record').textContent='🏆 '+saved.wins+' • 💀 '+saved.deaths}
 function needed(l){return 100+(l-1)*75+(l-1)*(l-1)*25}
