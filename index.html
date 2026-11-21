@@ -9,7 +9,8 @@
 body{background:radial-gradient(ellipse at 50% 0%,#172b55 0,#080f25 46%,#030611 100%)}
 #app{height:100dvh;display:flex;flex-direction:column;max-width:1100px;margin:auto}
 header{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:#071022dc;border-bottom:1px solid #50dcff44;gap:8px}
-.logo{font-size:clamp(16px,4vw,24px);font-weight:1000;letter-spacing:2px;color:var(--cyan);text-shadow:0 0 18px #00cfff88}.logo span{color:var(--violet)}
+.logo{position:relative;display:inline-flex;align-items:baseline;gap:7px;font-size:clamp(17px,4vw,25px);font-weight:1000;letter-spacing:3px;line-height:1;color:#eafcff;background:linear-gradient(100deg,#fff 4%,#70f5ff 35%,#c69aff 62%,#fff 83%);background-size:220% auto;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 8px #00cfff66);animation:logoShine 6s linear infinite}.logo:before{content:"✦";font-size:.7em;color:#70f5ff;-webkit-text-fill-color:#70f5ff;text-shadow:0 0 12px #43eaff;animation:logoSpark 2.4s ease-in-out infinite}.logo span{font-size:.78em;letter-spacing:2.4px;background:linear-gradient(90deg,#bd78ff,#ff83d5,#77eaff);background-size:180% auto;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+@keyframes logoShine{to{background-position:220% center}}@keyframes logoSpark{50%{transform:rotate(90deg) scale(1.18);filter:brightness(1.5)}}
 .stats{display:flex;gap:clamp(6px,2vw,16px);font-size:11px;color:#a9c8e7}.stats b{color:white;font-size:13px}
 #arena{position:relative;flex:1;min-height:0;overflow:hidden}#game{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;pointer-events:auto}#hud,#bossbar{z-index:3}#overlay{z-index:4}
 #hud{position:absolute;inset:9px 10px auto;display:flex;justify-content:space-between;pointer-events:none;gap:8px;font-size:11px}
@@ -20,8 +21,15 @@ header{display:flex;align-items:center;justify-content:space-between;padding:9px
 .panel{width:min(470px,100%);max-height:94%;overflow:auto;padding:21px;border:1px solid #53e8ff88;border-radius:19px;background:linear-gradient(155deg,#14264af5,#080e23f7);box-shadow:0 0 38px #00bfff25, inset 0 1px #ffffff13}
 .panel h1,.panel h2{margin:0;color:var(--cyan);letter-spacing:1.5px;text-shadow:0 0 18px #26dfff55}.panel h1{font-size:clamp(26px,7vw,39px);line-height:1.05}.panel p{font-size:13px;color:#b6cce6;line-height:1.55}
 .kicker{font-size:10px;letter-spacing:3px;color:var(--pink);font-weight:900;margin-bottom:9px}
-button{font:800 12px system-ui;color:#effcff;padding:11px 13px;border:1px solid #4ddfff88;border-radius:10px;background:linear-gradient(135deg,#102c51,#211943);box-shadow:0 0 12px #00cfff19;cursor:pointer;touch-action:manipulation}
-button:active{transform:scale(.97);filter:brightness(1.25)}button.primary{background:linear-gradient(120deg,#087fae,#653cb4);border-color:#a3faff}button:disabled{opacity:.4;cursor:not-allowed}
+button{position:relative;isolation:isolate;overflow:hidden;font:800 12px system-ui;color:#effcff;padding:11px 13px;border:1px solid #4ddfff88;border-radius:10px;background:linear-gradient(135deg,#102c51,#211943);box-shadow:0 0 12px #00cfff19;cursor:pointer;touch-action:manipulation;transition:transform .18s ease,filter .18s ease,box-shadow .22s ease,border-color .22s ease}
+button:before{content:"";position:absolute;z-index:-1;inset:-60% auto -60% -45%;width:32%;transform:translateX(-180%) skewX(-22deg);background:linear-gradient(90deg,transparent,#ffffff35,transparent);transition:transform .55s ease}
+button:hover{transform:translateY(-2px);border-color:#8cf5ff;box-shadow:0 5px 20px #00cfff35,0 0 12px #bd78ff20;filter:brightness(1.13)}
+button:hover:before{transform:translateX(560%) skewX(-22deg)}
+button:active{transform:scale(.94);filter:brightness(1.45);box-shadow:0 0 25px #61edff77}
+button.clicked{animation:buttonClick .34s cubic-bezier(.2,.8,.2,1)}
+button.primary{background:linear-gradient(120deg,#087fae,#653cb4);border-color:#a3faff}button:disabled{opacity:.4;cursor:not-allowed;transform:none;animation:none}
+@keyframes buttonClick{0%{transform:scale(1)}35%{transform:scale(.94);filter:brightness(1.55);box-shadow:0 0 28px #66efff99}72%{transform:scale(1.035)}100%{transform:scale(1);filter:brightness(1)}}
+@media(prefers-reduced-motion:reduce){.logo, .logo:before{animation:none}button,button:before{transition:none}button.clicked{animation:none}}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.actions .primary{grid-column:1/-1}
 .featuregrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:15px 0}.feature{padding:9px 5px;text-align:center;border:1px solid #5ce8ff35;border-radius:10px;background:#ffffff08}.feature b{display:block;color:var(--cyan);font-size:12px}.feature small{font-size:10px;color:#9bb8d8}
 #controls{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;padding:8px;background:#071022;border-top:1px solid #50dcff33}#controls button{padding:9px 12px}
@@ -307,5 +315,7 @@ function soundEffect(freq=440,duration=.09,type='triangle'){
 }
 $('music').onclick=()=>{try{buildSoundtrack();if(audio.state==='suspended')audio.resume();musicOn=!musicOn;musicGain.gain.setTargetAtTime(musicOn?.17:0,audio.currentTime,.35);$('music').textContent=musicOn?'♫ MUSIQUE : ON':'♫ MUSIQUE : OFF'}catch{$('music').textContent='AUDIO INDISPONIBLE'}};
 updateHud();
+// Micro-animation sur chaque clic, y compris les boutons créés dynamiquement.
+document.addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b||b.disabled)return;b.classList.remove('clicked');void b.offsetWidth;b.classList.add('clicked');b.addEventListener('animationend',()=>b.classList.remove('clicked'),{once:true})});
 })();
 </script></body></html>
